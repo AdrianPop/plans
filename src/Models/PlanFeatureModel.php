@@ -16,4 +16,9 @@ class PlanFeatureModel extends Model
     {
         return $this->belongsTo(config('plans.models.plan'), 'plan_id');
     }
+
+    public function isUnlimited()
+    {
+        return (bool) ($this->type == 'limit' && $this->limit < 0);
+    }
 }

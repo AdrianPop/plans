@@ -77,6 +77,13 @@ $plan->features()->saveMany([
         'type' => 'limit',
         'limit' => 2000,
     ]),
+    new PlanFeatureModel([
+        'name' => 'Users amount',
+        'code' => 'users.amount',
+        'description' => 'The maximum amount of users that can use the app at the same time.',
+        'type' => 'limit',
+        'limit' => -1, // or any negative value is treated as unlimited
+    ]),
     ...
 ]);
 ```
@@ -91,13 +98,22 @@ if($user->hasActiveSubscription()) {
 }
 ```
 
-The `consumeFeature()` method will return a `null` if the feature does not exist, `false` if the feature is not a `limit` or the amount is exceeding the current feature allowance and it will return `true` if the consumption is done. 
+The `consumeFeature()` method will return a `null` if the feature does not exist, `false` if the feature is not a `limit` or the amount is exceeding the current feature allowance and it will return `true` if the consumption is done.
 ```php
 if($user->hasActiveSubscription()) {
     $user->activeSubscription()->consumeFeature('build.minutes', 2001); // false
     $user->activeSubscription()->consumeFeature('build.hours', 1); // false
     $user->activeSubscription()->consumeFeature('build.minutes', 30); // true
 }
+```
+
+If `consumeFeature()` meets an unlimited feature, it will consume and for the sake of the metrics, it will track usage just like a normal record in the database.
+```php
+$user->activeSubscription()->consumeFeature('users.amount', 1337); // true
+$user->activeSubscription()->consumeFeature('users.amount', 1000); // true
+
+// Usage is no 2337.
+$usageAmount = $user->activeSubscritption()->usages()->where('code', 'users.amount')->first()->usage; // 2337
 ```
 
 Alternatively, you can also un-consume features. This is a reverting method:
@@ -110,6 +126,13 @@ if($user->hasActiveSubscription()) {
 
     // Now, the amount used for that feature is 0, the remaining part is 2000.
 }
+```
+
+Unconsuming unlimited features will reduce the usage, but will never reach negative values.
+```php
+$user->activeSubscription()->unconsumeFeature('users.amount', 1337); // true; now is 1000
+$user->activeSubscription()->unconsumeFeature('users.amount', 1000); // true; now is 0
+$user->activeSubscription()->unconsumeFeature('users.amount', 1000); // true; now is still 0
 ```
 
 # Subscribing to plans
@@ -223,13 +246,13 @@ $listen = [
         // $event->subscription = The current subscription.
         // $event->feature = The feature that was used.
         // $event->used = The amount used.
-        // $event->remaining = The total amount remaining.
+        // $event->remaining = The total amount remaining. If the feature is unlimited, will return -1
     ],
      \Rennokki\Plans\Events\FeatureUnconsumed::class => [
         // $event->subscription = The current subscription.
         // $event->feature = The feature that was used.
         // $event->used = The amount reverted.
-        // $event->remaining = The total amount remaining.
+        // $event->remaining = The total amount remaining. If the feature is unlimited, will return -1
     ],
 ];
 ```

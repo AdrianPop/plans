@@ -206,11 +206,11 @@ class PlanSubscriptionModel extends Model
                     'used' => 0,
                 ]));
 
-                if ($newUsage->used + $amount > $feature->limit) {
+                if (! $feature->isUnlimited() && $newUsage->used + $amount > $feature->limit) {
                     return false;
                 }
 
-                $remaining = $feature->limit - ($newUsage->used + $amount);
+                $remaining = ($feature->isUnlimited()) ? -1 : $feature->limit - ($newUsage->used + $amount);
 
                 event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
 
@@ -220,15 +220,15 @@ class PlanSubscriptionModel extends Model
             }
         }
 
-        if (! $feature) {
+        if (! $feature || $feature->type != 'limit') {
             return false;
         }
 
-        if ($feature->type != 'limit' || $usage->used + $amount > $feature->limit) {
+        if (! $feature->isUnlimited() && $usage->used + $amount > $feature->limit) {
             return false;
         }
 
-        $remaining = $feature->limit - ($usage->used + $amount);
+        $remaining = ($feature->isUnlimited()) ? -1 : $feature->limit - ($usage->used + $amount);
 
         event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
 
@@ -258,7 +258,7 @@ class PlanSubscriptionModel extends Model
                     'used' => 0,
                 ]));
 
-                event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, $feature->limit));
+                event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, ($feature->isUnlimited()) ? -1 : $feature->limit));
 
                 return true;
             }
@@ -268,8 +268,8 @@ class PlanSubscriptionModel extends Model
             return false;
         }
 
-        $used = $usage->used - $amount;
-        $remaining = ($used > 0) ? $feature->limit - $used : $feature->limit;
+        $used = ($feature->isUnlimited()) ? ($usage->used - $amount < 0) ? 0 : $usage->used - $amount : $usage->used - $amount;
+        $remaining = ($feature->isUnlimited()) ? -1 : ($used > 0) ? $feature->limit - $used : $feature->limit;
 
         event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, $remaining));
 

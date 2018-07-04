@@ -35,9 +35,16 @@ class FeatureTest extends TestCase
                 'description' => 'Access to the precious vault.',
                 'type' => 'feature',
             ]),
+            new PlanFeatureModel([
+                'name' => 'Users amount',
+                'code' => 'users.amount',
+                'description' => 'The maximum amount of users than can use the app at the same time.',
+                'type' => 'limit',
+                'limit' => -1,
+            ]),
         ]);
 
-        $this->assertEquals($subscription->features()->count(), 2);
+        $this->assertEquals($subscription->features()->count(), 3);
         $this->assertEquals($subscription->usages()->count(), 0);
 
         $this->assertFalse($subscription->consumeFeature('build.minutes', 2001));
@@ -46,6 +53,15 @@ class FeatureTest extends TestCase
         $this->assertTrue($subscription->consumeFeature('build.minutes', 10));
         $this->assertTrue($subscription->consumeFeature('build.minutes', 20));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 30);
+
+        $this->assertTrue($subscription->consumeFeature('users.amount', 1));
+        $this->assertTrue($subscription->consumeFeature('users.amount', 100));
+        $this->assertTrue($subscription->consumeFeature('users.amount', 300));
+        $this->assertTrue($subscription->consumeFeature('users.amount', 1000));
+        $this->assertTrue($subscription->consumeFeature('users.amount', 10000));
+
+        $this->assertEquals($subscription->usages()->where('code', 'users.amount')->first()->used, 11401);
+        $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
 
         $this->assertFalse($subscription->consumeFeature('vault.access', 2001));
     }
@@ -68,18 +84,35 @@ class FeatureTest extends TestCase
                 'description' => 'Access to the precious vault.',
                 'type' => 'feature',
             ]),
+            new PlanFeatureModel([
+                'name' => 'Users amount',
+                'code' => 'users.amount',
+                'description' => 'The maximum amount of users than can use the app at the same time.',
+                'type' => 'limit',
+                'limit' => -1,
+            ]),
         ]);
 
         $this->assertTrue($subscription->consumeFeature('build.minutes', 30));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 30);
 
-        $this->assertEquals($subscription->features()->count(), 2);
+        $this->assertEquals($subscription->features()->count(), 3);
         $this->assertEquals($subscription->usages()->count(), 1);
 
         $this->assertTrue($subscription->unconsumeFeature('build.minutes', 20));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 10);
         $this->assertTrue($subscription->unconsumeFeature('build.minutes', 10));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 0);
+
+        $this->assertTrue($subscription->unconsumeFeature('users.amount', 1));
+        $this->assertTrue($subscription->unconsumeFeature('users.amount', 100));
+        $this->assertTrue($subscription->unconsumeFeature('users.amount', 300));
+        $this->assertTrue($subscription->unconsumeFeature('users.amount', 1000));
+        $this->assertTrue($subscription->unconsumeFeature('users.amount', 10000));
+
+        $this->assertEquals($subscription->usages()->where('code', 'users.amount')->first()->used, 0);
+        $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
+        $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
 
         $this->assertFalse($subscription->unconsumeFeature('vault.access', 20));
     }
