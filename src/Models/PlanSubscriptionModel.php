@@ -277,4 +277,56 @@ class PlanSubscriptionModel extends Model
             'used' => (int) $used,
         ]);
     }
+
+    /**
+     * Get the amount used for a limit.
+     *
+     * @param string $featureCode The feature code. This feature has to be 'limit' type.
+     * @return null|int Null if doesn't exist, integer with the usage.
+     */
+    public function getUsageOf($featureCode)
+    {
+        $usage = $this->usages()->where('code', $featureCode)->first();
+        $feature = $this->features()->where('code', $featureCode)->first();
+
+        if (! $feature) {
+            return;
+        }
+
+        if ($feature->type != 'limit') {
+            return;
+        }
+
+        if (! $usage) {
+            return 0;
+        }
+
+        return (int) $usage->used;
+    }
+
+    /**
+     * Get the amount remaining for a feature.
+     *
+     * @param string $featureCode The feature code. This feature has to be 'limit' type.
+     * @return int The amount remaining.
+     */
+    public function getRemainingOf($featureCode)
+    {
+        $usage = $this->usages()->where('code', $featureCode)->first();
+        $feature = $this->features()->where('code', $featureCode)->first();
+
+        if (! $feature) {
+            return 0;
+        }
+
+        if ($feature->type != 'limit') {
+            return 0;
+        }
+
+        if (! $usage) {
+            return (int) ($feature->isUnlimited()) ? -1 : $feature->limit;
+        }
+
+        return (int) ($feature->isUnlimited()) ? -1 : ($feature->limit - $usage->used);
+    }
 }

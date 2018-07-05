@@ -104,6 +104,12 @@ if($user->hasActiveSubscription()) {
     $user->activeSubscription()->consumeFeature('build.minutes', 2001); // false
     $user->activeSubscription()->consumeFeature('build.hours', 1); // false
     $user->activeSubscription()->consumeFeature('build.minutes', 30); // true
+
+    $user->activeSubscription()->getUsageOf('build.minutes'); // 30
+    $user->activeSubscription()->getRemainingOf('build.minutes'); // 1970
+
+    $user->activeSubscription()->getUsageOf('build.hours'); // null
+    $user->activeSubscription()->getRemainingOf('build.hours'); // 0
 }
 ```
 
@@ -114,6 +120,10 @@ $user->activeSubscription()->consumeFeature('users.amount', 1000); // true
 
 // Usage is no 2337.
 $usageAmount = $user->activeSubscritption()->usages()->where('code', 'users.amount')->first()->usage; // 2337
+
+// You can also use methods to retrieve usage and remaining amounts.
+$usageAmount = $user->activeSubscription()->getUsageOf('users.amount'); // 2337
+$usageAmount = $user->activeSubscription()->getRemainingOf('users.amount'); // 0
 ```
 
 Alternatively, you can also un-consume features. This is a reverting method:

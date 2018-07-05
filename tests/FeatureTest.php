@@ -61,9 +61,17 @@ class FeatureTest extends TestCase
         $this->assertTrue($subscription->consumeFeature('users.amount', 10000));
 
         $this->assertEquals($subscription->usages()->where('code', 'users.amount')->first()->used, 11401);
+        $this->assertEquals($subscription->getUsageOf('users.amount'), 11401);
+        $this->assertEquals($subscription->getRemainingOf('users.amount'), -1);
         $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
 
         $this->assertFalse($subscription->consumeFeature('vault.access', 2001));
+
+        $this->assertNull($subscription->getUsageOf('vault.access'));
+        $this->assertEquals($subscription->getRemainingOf('vault.access'), 0);
+
+        $this->assertNull($subscription->getUsageOf('build.hours'));
+        $this->assertEquals($subscription->getRemainingOf('build.hours'), 0);
     }
 
     public function testUnconsumeFeature()
@@ -95,14 +103,20 @@ class FeatureTest extends TestCase
 
         $this->assertTrue($subscription->consumeFeature('build.minutes', 30));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 30);
+        $this->assertEquals($subscription->getUsageOf('build.minutes'), 30);
+        $this->assertEquals($subscription->getRemainingOf('build.minutes'), 1970);
 
         $this->assertEquals($subscription->features()->count(), 3);
         $this->assertEquals($subscription->usages()->count(), 1);
 
         $this->assertTrue($subscription->unconsumeFeature('build.minutes', 20));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 10);
+        $this->assertEquals($subscription->getUsageOf('build.minutes'), 10);
+        $this->assertEquals($subscription->getRemainingOf('build.minutes'), 1990);
         $this->assertTrue($subscription->unconsumeFeature('build.minutes', 10));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 0);
+        $this->assertEquals($subscription->getUsageOf('build.minutes'), 0);
+        $this->assertEquals($subscription->getRemainingOf('build.minutes'), 2000);
 
         $this->assertTrue($subscription->unconsumeFeature('users.amount', 1));
         $this->assertTrue($subscription->unconsumeFeature('users.amount', 100));
@@ -111,6 +125,8 @@ class FeatureTest extends TestCase
         $this->assertTrue($subscription->unconsumeFeature('users.amount', 10000));
 
         $this->assertEquals($subscription->usages()->where('code', 'users.amount')->first()->used, 0);
+        $this->assertEquals($subscription->getUsageOf('users.amount'), 0);
+        $this->assertEquals($subscription->getRemainingOf('users.amount'), -1);
         $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
         $this->assertNotNull($subscription->usages()->where('code', 'users.amount')->first());
 
