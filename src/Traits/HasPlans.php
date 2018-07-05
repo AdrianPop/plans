@@ -104,6 +104,35 @@ trait HasPlans
     }
 
     /**
+     * Subscribe the binded model to a plan. Returns false if it has an active subscription already.
+     *
+     * @param PlanModel $plan The Plan model instance.
+     * @param DateTme|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @return PlanSubscription The PlanSubscription model instance.
+     */
+    public function subscribeToUntil($plan, $date)
+    {
+        $subscriptionModel = config('plans.models.subscription');
+
+        $date = Carbon::parse($date);
+
+        if ($date->lessThanOrEqualTo(Carbon::now()) || $this->hasActiveSubscription()) {
+            return false;
+        }
+
+        $subscription = $this->subscriptions()->save(new $subscriptionModel([
+            'plan_id' => $plan->id,
+            'starts_on' => Carbon::now(),
+            'expires_on' => $date,
+            'cancelled_on' => null,
+        ]));
+
+        event(new \Rennokki\Plans\Events\NewSubscriptionUntil($subscription, $date));
+
+        return $subscription;
+    }
+
+    /**
      * Upgrade the binded model's plan. If it is the same plan, it just extends it.
      *
      * @param PlanModel $newPlan The new Plan model instance.
@@ -114,10 +143,27 @@ trait HasPlans
     public function upgradeTo($newPlan, $duration = 30, $startFromNow = true)
     {
         if (! $this->hasActiveSubscription()) {
-            return $this->subscribeTo($newPlan, $duration, $startFromNow);
+            return $this->subscribeTo($newPlan, $duration);
         }
 
         return $this->activeSubscription()->upgradeTo($newPlan, $duration, $startFromNow);
+    }
+
+    /**
+     * Upgrade the binded model's plan. If it is the same plan, it just extends it.
+     *
+     * @param PlanModel $newPlan The new Plan model instance.
+     * @param DateTme|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param bool $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
+     * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
+     */
+    public function upgradeToUntil($newPlan, $date, $startFromNow = true)
+    {
+        if (! $this->hasActiveSubscription()) {
+            return $this->subscribeToUntil($newPlan, $date);
+        }
+
+        return $this->activeSubscription()->upgradeToUntil($newPlan, $date, $startFromNow);
     }
 
     /**
@@ -134,6 +180,22 @@ trait HasPlans
         }
 
         return $this->activeSubscription()->extendWith($duration, $startFromNow);
+    }
+
+    /**
+     * Extend the subscription until a certain date.
+     *
+     * @param DateTme|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param bool $startFromNow Wether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
+     * @return PlanSubscription The PlanSubscription model instance of the extended subscription.
+     */
+    public function extendCurrentSubscriptionUntil($date, $startFromNow = true)
+    {
+        if (! $this->hasActiveSubscription()) {
+            return $this->subscribeToUntil(($this->hasSubscriptions()) ? $this->lastActiveSubscription()->plan()->first() : config('plans.models.plan')::first(), $date);
+        }
+
+        return $this->activeSubscription()->extendUntil($date, $startFromNow);
     }
 
     /**

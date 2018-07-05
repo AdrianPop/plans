@@ -149,8 +149,15 @@ $user->activeSubscription()->unconsumeFeature('users.amount', 1000); // true; no
 You can subscribe your models to a plan.
 ```php
 // Subscribe an user to a plan.
-$user->subscribeTo($plan, 30, true);
+$user->subscribeTo($plan, 30);
 $user->activeSubscription()->remainingDays(); // 29; this is because it is 29 days, 23 hours, and so on.
+```
+
+You can also set a date instead of a duration:
+```php
+$user->subscribeToUntil($plan, '2018-12-21');
+$user->subscribeToUntil($plan, '2018-12-21 16:54:11');
+$user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
 ```
 
 Note: if the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeTo()` or `extendWith()` methods to either upgrade or extend the subscription period.
@@ -163,6 +170,13 @@ A false response is returned if the model has an active subscription. Thus, you 
 ```php
 $user->upgradeTo($anotherPlan, 60, true);
 $user->activeSubscription()->upgradeTo($anotherPlan, 60, true); // alias
+```
+
+If you plan to use a date instead of a certain duration in days, you can use:
+```php
+$user->upgradeToUntil($anotherPlan, '2018-12-21', true);
+$user->upgradeToUntil($anotherPlan, '2018-12-21 16:54:11', true);
+$user->upgradeToUntil($anotherPlan, Carbon::create(2018, 12, 21, 16, 54, 11), true);
 ```
 
 The first parameter is the plan we wish to change to. The second is the period, in days
@@ -178,6 +192,13 @@ Same as the upgrading methods, this accepts a duration and a parameter to know i
 ```php
 $user->extendCurrentSubscriptionWith(60, true); // 60 days, starts now
 $user->activeSubscription()->extendWith(60, true); // alias
+```
+
+Extending also works with dates:
+```php
+$user->extendCurrentSubscriptionUntil('2018-12-21', true);
+$user->extendCurrentSubscriptionUntil('2018-12-21 16:54:11', true);
+$user->extendCurrentSubscriptionUntil(Carbon::create(2018, 12, 21, 16, 54, 11), true);
 ```
 
 # Cancelling
@@ -239,15 +260,32 @@ $listen = [
         // $event->subscription = The subscription that was created.
         // $event->duration = The duration, in days, of the subscription.
     ],
+     \Rennokki\Plans\Events\NewSubscriptionUntil::class => [
+        // $event->subscription = The subscription that was created.
+        // $event->expiresOn = The Carbon instance when the subscription will expire.
+    ],
     \Rennokki\Plans\Events\ExtendSubscription::class => [
         // $event->subscription = The subscription that was extended.
         // $event->duration = The duration, in days, of the subscription.
         // $event->startFromNow = If the subscription is exteded now or is created a new subscription, in the future.
         // $event->newSubscription = If the startFromNow is false, here will be sent the new subscription that starts after the current one ends.
     ],
+    \Rennokki\Plans\Events\ExtendSubscriptionUntil::class => [
+        // $event->subscription = The subscription that was extended.
+        // $event->expiresOn = The Carbon instance of the date when the subscription will expire.
+        // $event->startFromNow = If the subscription is exteded now or is created a new subscription, in the future.
+        // $event->newSubscription = If the startFromNow is false, here will be sent the new subscription that starts after the current one ends.
+    ],
     \Rennokki\Plans\Events\UpgradeSubscription::class => [
         // $event->subscription = The current subscription.
         // $event->duration = The duration, in days, of the upgraded subscription.
+        // $event->startFromNow = If the subscription is upgraded now or is created a new subscription, in the future.
+        // $event->oldPlan = Here lies the current (which is now old) plan.
+        // $event->newPlan = Here lies the new plan. If it's the same plan, it will match with the $event->oldPlan
+    ],
+    \Rennokki\Plans\Events\UpgradeSubscriptionUntil::class => [
+        // $event->subscription = The current subscription.
+        // $event->expiresOn = The Carbon instance of the date when the subscription will expire.
         // $event->startFromNow = If the subscription is upgraded now or is created a new subscription, in the future.
         // $event->oldPlan = Here lies the current (which is now old) plan.
         // $event->newPlan = Here lies the new plan. If it's the same plan, it will match with the $event->oldPlan

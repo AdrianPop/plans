@@ -96,6 +96,49 @@ class PlanSubscriptionModel extends Model
     }
 
     /**
+     * Extend the current subscription to a specific date.
+     *
+     * @param DateTme|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param bool $startFromNow Wether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
+     * @return PlanSubscription The PlanSubscription model instance of the extended subscription.
+     */
+    public function extendUntil($date, $startFromNow = true)
+    {
+        $date = Carbon::parse($date);
+
+        if ($startFromNow) {
+            if ($date->lessThanOrEqualTo(Carbon::now())) {
+                return false;
+            }
+
+            $this->update([
+                'expires_on' => $date,
+            ]);
+
+            event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $date, $startFromNow, null));
+
+            return $this;
+        }
+
+        if (Carbon::parse($this->expires_on)->greaterThan($date)) {
+            return false;
+        }
+
+        $subscription = Self::create([
+            'plan_id' => $this->id,
+            'model_id' => $this->model_id,
+            'model_type' => $this->model_type,
+            'starts_on' => Carbon::parse($this->expires_on),
+            'expires_on' => $date,
+            'cancelled_on' => null,
+        ]);
+
+        event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $date, $startFromNow, $subscription));
+
+        return $subscription;
+    }
+
+    /**
      * Upgrade the subscription's plan. If it is the same plan, it just extends it.
      *
      * @param PlanModel $newPlan The new Plan model instance.
@@ -105,6 +148,10 @@ class PlanSubscriptionModel extends Model
      */
     public function upgradeTo($newPlan, $duration = 30, $startFromNow = true)
     {
+        if ($duration < 1) {
+            return false;
+        }
+
         $subscription = $this->extendWith($duration, $startFromNow);
         $oldPlan = $this->plan()->first();
 
@@ -117,6 +164,44 @@ class PlanSubscriptionModel extends Model
         }
 
         event(new \Rennokki\Plans\Events\UpgradeSubscription($subscription, $duration, $startFromNow, $oldPlan, $newPlan));
+
+        return $subscription;
+    }
+
+    /**
+     * Upgrade the subscription's plan. If it is the same plan, it just extends it.
+     *
+     * @param PlanModel $newPlan The new Plan model instance.
+     * @param DateTme|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param bool $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
+     * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
+     */
+    public function upgradeToUntil($newPlan, $date, $startFromNow = true)
+    {
+        $subscription = $this->extendUntil($date, $startFromNow);
+        $oldPlan = $this->plan()->first();
+
+        $date = Carbon::parse($date);
+
+        if ($startFromNow) {
+            if ($date->lessThanOrEqualTo(Carbon::now())) {
+                return false;
+            }
+        }
+
+        if (Carbon::parse($subscription->expires_on)->greaterThan($date)) {
+            return false;
+        }
+
+        if ($subscription->plan_id != $newPlan->id) {
+            $subscription->update([
+                'plan_id' => $newPlan->id,
+            ]);
+
+            $subscription = $this;
+        }
+
+        event(new \Rennokki\Plans\Events\UpgradeSubscriptionUntil($subscription, $date, $startFromNow, $oldPlan, $newPlan));
 
         return $subscription;
     }
