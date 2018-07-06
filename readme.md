@@ -11,6 +11,13 @@
 # Laravel Plans
 Laravel Plans is a package for SaaS-like apps that need easy management over plans, features and event-driven updates on plans. If you plan selling your service with subscription, you're in the right place!
 
+# Why would you use that while there's Laravel Cashier?
+Cashier is a great subscription-like feature for your Laravel app. However, if you don't encounter problems while using an app, you don't know what to improve to it.
+
+Plans include features. A lot. Some of them are just permissions you can give to your users, some are just amounts of limits for that period of time. Think about permissions to use a certain feature, or a maximum amount of SMS you can give to your users to use per month. Cashier doesn't implement that. With Laravel Plans, yOu can track the usage and the remaining amounts for limited features, for example. Or implement your unlimited features that never expire throughout the subscription period.
+
+###  However, Laravel Plans doesn't include payment methods. But it's planned for v1.5.0. Stay tuned!
+
 # Installation
 Install the package:
 ```bash
@@ -42,156 +49,97 @@ class User extends Model {
 }
 ```
 
-**Note: In case you have modified `plans.php`'s models, make sure you use them, and do not forget to extend your models from them.**
+**Note: In case you plan to use your own models for the tables that this package implements, don't forget to extend from the original ones and put your models in `plans.php`**
 
-# What can you do?
-The basic unit of the subscription-like system is a plan. You can create it using `Rennokki\Plans\Models\PlanModel`.
+# Creating plans
+The basic unit of the subscription-like system is a plan. You can create it using `Rennokki\Plans\Models\PlanModel` or your model, if you have implemented your own.
 
-If you have extended it, use your own model class to create one.
+### For the sake of the examples, all models will be `Plan`, `Subscription`, `Usage` and `Feature`.
+
 ```php
-$plan = PlanModel::create([
+$plan = Plan::create([
     'name' => 'My awesome plan',
     'description' => 'One of the best plans out here.',
     'price' => 9.99,
-    'duration' => 30, // in days
+    'duration' => 30, // in days; doesn't have an utility yet; it is stored as information.
 ]);
 ```
 
-With the plan, you can assign features (or limits, i'll explain shortly) to it and you can subscribe your model which has `HasPlans` trait to it.
+# Plan features
+Each plan has features. They can be either limited, unlimited, or there just to store the information of a certain permission.
 
-Features come in two types: `limit` and `feature`:
-* `feature` is a single string, that do not needs counting. For example, you can store permissions.
-* `limit` is a number. For this one, `limit` and `used` field will be used. It is meant to measure how many of that feature the holder has consumed. For example, how many build minutes has consumed during the month (or during the Cycle, which is 30 days in this example)
+Marking a feature type can be done using:
+* `feature`, is a single string, that do not needs counting. For example, you can store permissions.
+* `limit`, is a number. For this kind of feature, the `limit` field will be filled. It is meant to measure how many of that feature the user has consumed, from this subscription. For example, how many build minutes has consumed during the month (or during the Cycle, which is 30 days in this example)
+
+## Note: For unlimited feature, the `limit` field will be set to any negative value.
+
+To attach features to your plan, you can use relatinship `features()`.
 ```php
 $plan->features()->saveMany([
-    new PlanFeatureModel([
+    new Feature([
         'name' => 'Vault access',
         'code' => 'vault.access',
         'description' => 'Offering access to the vault.',
         'type' => 'feature',
     ]),
-    new PlanFeatureModel([
+    new Feature([
         'name' => 'Build minutes',
         'code' => 'build.minutes',
         'description' => 'Build minutes used for CI/CD.',
         'type' => 'limit',
         'limit' => 2000,
     ]),
-    new PlanFeatureModel([
+    new Feature([
         'name' => 'Users amount',
         'code' => 'users.amount',
         'description' => 'The maximum amount of users that can use the app at the same time.',
         'type' => 'limit',
-        'limit' => -1, // or any negative value is treated as unlimited
+        'limit' => -1, // or any negative value treats this feature as unlimited
     ]),
     ...
 ]);
 ```
 
-# Limits and Features
-To consume the `limit` type feature, you can call `consumeFeature()` from a subscription instance. `activeSubscription()` method.
-
-If you have subscribed your model to a plan, you can use `activeSubscription()` method, but make sure you check it before:
-```php
-if($user->hasActiveSubscription()) {
-    $user->activeSubscription()->consumeFeature('build.minutes', 10); // consumed 10 minutes.
-}
-```
-
-The `consumeFeature()` method will return a `null` if the feature does not exist, `false` if the feature is not a `limit` or the amount is exceeding the current feature allowance and it will return `true` if the consumption is done.
-```php
-if($user->hasActiveSubscription()) {
-    $user->activeSubscription()->consumeFeature('build.minutes', 2001); // false
-    $user->activeSubscription()->consumeFeature('build.hours', 1); // false
-    $user->activeSubscription()->consumeFeature('build.minutes', 30); // true
-
-    $user->activeSubscription()->getUsageOf('build.minutes'); // 30
-    $user->activeSubscription()->getRemainingOf('build.minutes'); // 1970
-
-    $user->activeSubscription()->getUsageOf('build.hours'); // null
-    $user->activeSubscription()->getRemainingOf('build.hours'); // 0
-}
-```
-
-If `consumeFeature()` meets an unlimited feature, it will consume and for the sake of the metrics, it will track usage just like a normal record in the database.
-```php
-$user->activeSubscription()->consumeFeature('users.amount', 1337); // true
-$user->activeSubscription()->consumeFeature('users.amount', 1000); // true
-
-// Usage is no 2337.
-$usageAmount = $user->activeSubscritption()->usages()->where('code', 'users.amount')->first()->usage; // 2337
-
-// You can also use methods to retrieve usage and remaining amounts.
-$usageAmount = $user->activeSubscription()->getUsageOf('users.amount'); // 2337
-$usageAmount = $user->activeSubscription()->getRemainingOf('users.amount'); // 0
-```
-
-Alternatively, you can also un-consume features. This is a reverting method:
-```php
-if($user->hasActiveSubscription()) {
-    $user->activeSubscription()->consumeFeature('build.minutes', 30); // true
-
-    $user->activeSubscription()->unconsumeFeature('build.hours', 1); // false
-    $user->activeSubscription()->unconsumeFeature('build.minutes', 30); // true
-
-    // Now, the amount used for that feature is 0, the remaining part is 2000.
-}
-```
-
-Unconsuming unlimited features will reduce the usage, but will never reach negative values.
-```php
-$user->activeSubscription()->unconsumeFeature('users.amount', 1337); // true; now is 1000
-$user->activeSubscription()->unconsumeFeature('users.amount', 1000); // true; now is 0
-$user->activeSubscription()->unconsumeFeature('users.amount', 1000); // true; now is still 0
-```
-
 # Subscribing to plans
-You can subscribe your models to a plan.
+Your users can be subscribed to plans for a certain amount of days or until a certain date.
 ```php
-// Subscribe an user to a plan.
-$user->subscribeTo($plan, 30);
-$user->activeSubscription()->remainingDays(); // 29; this is because it is 29 days, 23 hours, and so on.
+$susbscription = $user->subscribeTo($plan, 30);
+
+$subscription->remainingDays(); // 29; this is because it is 29 days, 23 hours, and so on.
 ```
 
-You can also set a date instead of a duration:
+If you plan to subscribe your users until a certain date, you can do so with dates.
 ```php
 $user->subscribeToUntil($plan, '2018-12-21');
 $user->subscribeToUntil($plan, '2018-12-21 16:54:11');
 $user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
 ```
 
-Note: if the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeTo()` or `extendWith()` methods to either upgrade or extend the subscription period.
+## Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeTo()`, `upgradeToUntil()`, `extendWith()` or `extendWithUntil()` methods to either upgrade or extend the subscription period with a certain amount of days or until a certain date.
 
-In `subscribeTo()` method, the first parameter represents the Plan instance the model will be subscribed to. The second one is the period, in days.
-
-A false response is returned if the model has an active subscription. Thus, you can use `upgradeTo()` method to change the plan.
-
-# Upgrading to another plans
+# Upgrading to other plans
 ```php
-$user->upgradeTo($anotherPlan, 60, true);
-$user->activeSubscription()->upgradeTo($anotherPlan, 60, true); // alias
+$user->upgradeTo($anotherPlan, 60, true); // this will extend the current subscription with 60 days
+$user->upgradeTo($anotherPlan, 60, false); // this will start a new subscription at the end of the current one
 ```
 
-If you plan to use a date instead of a certain duration in days, you can use:
+## Note: The third parameter is `startFromNow`. If it is set to true, it will extend the current subscription. If not, a new subscription will be created. If set to true, it will return the current subscription, modified. If set to false, it will return the new subscription instance.
+
+Like `subscribeTo()`, you can also use dates:
 ```php
 $user->upgradeToUntil($anotherPlan, '2018-12-21', true);
 $user->upgradeToUntil($anotherPlan, '2018-12-21 16:54:11', true);
 $user->upgradeToUntil($anotherPlan, Carbon::create(2018, 12, 21, 16, 54, 11), true);
 ```
 
-The first parameter is the plan we wish to change to. The second is the period, in days
+For convenience, if the user is not subscribed to any plan, it will be automatically subscribed using this method, either using dates or duration in days.
 
-The third parameter is widely used across the package, so watch out: if set true, instead of creating a new subscription that starts at the end of the current subscription, it will extend the current one with a number of days. If set to false, a new subscription will be created in extension to the current one. If the current active subscription is expiring tomorrow, the new subscription will start tomorrow, after the first one ends.
-
-When talking about this third parameter, we refer if the plan, either we're subscribing, extending or upgrading, will start at the `next cycle` or it is `exteding the current subscription`.
-
-For convenience, if the user is not subscribed to any plan, it will be automatically subscribed if using this method.
-
-# Extending subscriptions' durations.
-Same as the upgrading methods, this accepts a duration and a parameter to know if the change should be made now, or in another cycle (another, future subscription, in extension to the current one), after the current subscription ends.
+# Extending subscriptions
+The upgrade method is inherited from extending method (this one), and what it does is actually extending the current subscription with a certain amount of days, either starting from now (extending the current subscription), or creating a new one that starts when the current one ends.
 ```php
 $user->extendCurrentSubscriptionWith(60, true); // 60 days, starts now
-$user->activeSubscription()->extendWith(60, true); // alias
+$user->activeSubscription()->extendWith(60, true); // you can also use this
 ```
 
 Extending also works with dates:
@@ -199,57 +147,96 @@ Extending also works with dates:
 $user->extendCurrentSubscriptionUntil('2018-12-21', true);
 $user->extendCurrentSubscriptionUntil('2018-12-21 16:54:11', true);
 $user->extendCurrentSubscriptionUntil(Carbon::create(2018, 12, 21, 16, 54, 11), true);
+
+// As an alias, it can also be called within Subscription instance.
+$subscription = $user->activeSubscription();
+$subscription->extendUntil('2018-12-21', true); // you can also use this
 ```
 
-# Cancelling
-You can cancel subscriptions. If a subscription is not finished yet (it is not expired), it will be marked as `pending cancellation`. It will be fully cancelled when the expiration date comes in and it is cancelled.
+# Cancelling subscriptions
+You can cancel subscriptions. If a subscription is not finished yet (it is not expired), it will be marked as `pending cancellation`. It will be fully cancelled when the expiration dates passes the current time.
 ```php
 $user->cancelCurrentSubscription(); // false if there is not active subscription
-$user->activeSubscription()->cancel();
 
-// It can be checked out later.
-$subscription->isCancelled(); // true, only if it has been cancelled
-$subscription->isPendingCancellation(); // true; if it expires, it will be false
-$subscription->isActive(); // still true; if it expires, it will be false
-```
-
-# Relationships
-Whenever you want to query data about plans, you can use the relationships built it, either in the `SubscriptionPlan` instance (which is returned in the `activeSubscription()` method) or from your model which uses the trait.
-
-```php
-$user = User::find(1);
-$user->subscribeTo(PlanModel::find(1), 30); // Subscribe to plan with ID 1, 30 days.
-
-$user->subscriptions(); // All subscriptions; Relationship
-$user->currentSubscription(); // Current subscription; Relationship
-
-// null if does not have an active subscription. It returns a PlanSubscription instance.
-$user->activeSubscription();
-
-// If it does not have subscriptions, it returns null.
-// If has one active, it returns the `PlanSubscription` instance.
-// If does not have an active one, it returns the last one, even if it expired.
-$user->lastActiveSubscription();
-
-// Returns true if has an active subscription; else, false.
-$user->hasActiveSubscription();
-```
-
-To avoid confusion, the `PlanSubscription` instance is returned on `activeSubscription()` and `lastActiveSubscription()`. You can call the following methods in chain to them:
-```php
+// Same thing.
 $subscription = $user->activeSubscription();
-
-$subscription->plan(); // Returns the plan of this subscription; Relationship
-$subscription->features(); // Returns the features of the current subscription; Relationship
-$subscription->usages(); // Returns the usage counts for the limit-type features within this subscription's plan.
+$subscription->cancel();
 ```
+
+# Checking status for subscriptions
+You can check the status of a subscription using the following methods:
+```php
+$subscription->isCancelled(); // cancelled
+$subscription->isPendingCancellation(); // cancelled, but did not expire yet
+$subscription->isActive(); // if it started and has not expired
+$subscription->hasStarted();
+$subscription->hasExpired();
+$subscription->remainingDays();
+```
+
+# Consuming features that has limits
+To consume the `limit` type feature, you have to call the `consumeFeature()` method within a subscription instance.
+
+To retrieve a subscription instance, you can call `activeSubscription()` method within the user that implements the trait. As a pre-check, don't forget to call `hasActiveSubscription()` from the user instance to make sure it is subscribed to it.
+
+```php
+if ($user->hasActiveSubscription()) {
+
+    $subscription = $user->activeSubscription();
+    $subscription->consumeFeature('build.minutes', 10); // consumed 10 minutes.
+
+    $subscription->getUsageOf('build.minutes'); // 10
+    $subscription->getRemainingOf('build.minutes'); // 1990
+
+}
+```
+
+The `consumeFeature()` method will return:
+* `false` if the feature does not exist, the feature is not a `limit` or the amount is exceeding the current feature allowance
+* `true` if the consumption was done successfully
+
+```php
+// Note: The remaining of build.minutes is now 1990
+
+$subscription->consumeFeature('build.minutes', 1991); // false
+$subscription->consumeFeature('build.hours', 1); // false
+$subscription->consumeFeature('build.minutes', 30); // true
+
+$subscription->getUsageOf('build.minutes'); // 40
+$subscription->getRemainingOf('build.minutes'); // 1960
+```
+
+If `consumeFeature()` meets an unlimited feature, it will consume it and it will also track usage just like a normal record in the database.
+
+The remaining will always be `-1` for unlimited features.
+
+The revering method for `consumeFeature()` method is `unconsumeFeature()`. This works just the same, but in the reverse:
+```php
+// Note: The remaining of build.minutes is 1960
+
+$subscription->consumeFeature('build.minutes', 60); // true
+
+$subscription->getUsageOf('build.minutes'); // 100
+$subscription->getRemainingOf('build.minutes'); // 1900
+
+$subscription->unconsumeFeature('build.minutes', 100); // true
+$subscription->unconsumeFeature('build.hours', 1); // false
+
+$subscription->getUsageOf('build.minutes'); // 0
+$subscription->getRemainingOf('build.minutes'); // 2000
+```
+
+Using the `unconsumeFeature()` method on unlimited features will also reduce usage, but it will never reach negative values.
 
 # Events
-When using subscription plans, you want to trigger events to automatically run code that might do changes. For example, if an user automatically extends their period before the subscription ends, you can give him free bonus days for loyality.
+When using subscription plans, you want to listen for events to automatically run code that might do changes for your app.
+
+For example, if an user automatically extends its period before the subscription ends, you can give it free bonus days for loyality.
 
 Events are easy to use. If you are not familiar, you can check [Laravel's Official Documentation on Events](https://laravel.com/docs/5.6/events).
 
-All you have to do is to implement the following Events in your `EventServiceProvider.php` file:
+All you have to do is to implement the following Events in your `EventServiceProvider.php` file. Each event will have it's own members than can be accessed through the `$event` variable within the `handle()` method in your listener.
+
 ```php
 $listen = [
     ...
