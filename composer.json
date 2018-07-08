@@ -1,13 +1,14 @@
 {
     "name": "rennokki/plans",
-    "description": "Plans is a package meant to handle subscriptions for a SaaS-like system.",
+    "description": "Laravel Plans is a package for SaaS-like apps that need easy management over plans, features and event-driven updates on plans and subscriptions.",
     "keywords": [
         "eloquent",
         "laravel",
         "subscription",
         "plan",
         "plans",
-        "model"
+        "model",
+        "saas"
     ],
     "homepage": "https://github.com/rennokki/plans",
     "license": "MIT",
