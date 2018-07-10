@@ -72,7 +72,7 @@ Marking a feature type can be done using:
 * `feature`, is a single string, that do not needs counting. For example, you can store permissions.
 * `limit`, is a number. For this kind of feature, the `limit` field will be filled. It is meant to measure how many of that feature the user has consumed, from this subscription. For example, how many build minutes has consumed during the month (or during the Cycle, which is 30 days in this example)
 
-## Note: For unlimited feature, the `limit` field will be set to any negative value.
+**Note: For unlimited feature, the `limit` field will be set to any negative value.**
 
 To attach features to your plan, you can use relatinship `features()`.
 ```php
@@ -116,7 +116,7 @@ $user->subscribeToUntil($plan, '2018-12-21 16:54:11');
 $user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
 ```
 
-## Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeTo()`, `upgradeToUntil()`, `extendWith()` or `extendWithUntil()` methods to either upgrade or extend the subscription period with a certain amount of days or until a certain date.
+**Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeTo()`, `upgradeToUntil()`, `extendWith()` or `extendWithUntil()` methods to either upgrade or extend the subscription period with a certain amount of days or until a certain date.**
 
 # Upgrading to other plans
 ```php
@@ -124,7 +124,7 @@ $user->upgradeTo($anotherPlan, 60, true); // this will extend the current subscr
 $user->upgradeTo($anotherPlan, 60, false); // this will start a new subscription at the end of the current one
 ```
 
-## Note: The third parameter is `startFromNow`. If it is set to true, it will extend the current subscription. If not, a new subscription will be created. If set to true, it will return the current subscription, modified. If set to false, it will return the new subscription instance.
+**Note: The third parameter is `startFromNow`. If it is set to true, it will extend the current subscription. If not, a new subscription will be created. If set to true, it will return the current subscription, modified. If set to false, it will return the new subscription instance.**
 
 Like `subscribeTo()`, you can also use dates:
 ```php
