@@ -98,7 +98,7 @@ trait HasPlans
             'cancelled_on' => null,
         ]));
 
-        event(new \Rennokki\Plans\Events\NewSubscription($subscription, $duration));
+        event(new \Rennokki\Plans\Events\NewSubscription($this, $subscription, $duration));
 
         return $subscription;
     }
@@ -127,7 +127,7 @@ trait HasPlans
             'cancelled_on' => null,
         ]));
 
-        event(new \Rennokki\Plans\Events\NewSubscriptionUntil($subscription, $date));
+        event(new \Rennokki\Plans\Events\NewSubscriptionUntil($this, $subscription, $date));
 
         return $subscription;
     }

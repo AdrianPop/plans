@@ -8,11 +8,13 @@ class NewSubscriptionUntil
 {
     use SerializesModels;
 
+    public $model;
     public $subscription;
     public $expiresOn;
 
-    public function __construct($subscription, $expiresOn)
+    public function __construct($model, $subscription, $expiresOn)
     {
+        $this->model = $model;
         $this->subscription = $subscription;
         $this->expiresOn = $expiresOn;
     }

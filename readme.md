@@ -244,10 +244,12 @@ $listen = [
         // $event->subscription = The subscription that was cancelled.
     ],
     \Rennokki\Plans\Events\NewSubscription::class => [
+        // $event->model = The model that was subscribed.
         // $event->subscription = The subscription that was created.
         // $event->duration = The duration, in days, of the subscription.
     ],
      \Rennokki\Plans\Events\NewSubscriptionUntil::class => [
+        // $event->model = The model that was subscribed.
         // $event->subscription = The subscription that was created.
         // $event->expiresOn = The Carbon instance when the subscription will expire.
     ],
