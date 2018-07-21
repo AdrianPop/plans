@@ -8,10 +8,17 @@ class CancelSubscription
 {
     use SerializesModels;
 
+    public $model;
     public $subscription;
 
-    public function __construct($subscription)
+    /**
+     * @param Model $model The model on which the action was done.
+     * @param SubscriptionModel $subscription Subscription that was cancelled.
+     * @return void
+     */
+    public function __construct($model, $subscription)
     {
+        $this->model = $model;
         $this->subscription = $subscription;
     }
 }

@@ -12,6 +12,12 @@ class NewSubscriptionUntil
     public $subscription;
     public $expiresOn;
 
+    /**
+     * @param Model $model The model that subscribed.
+     * @param SubscriptionModel $subscription Subscription the model has subscribed to.
+     * @param Carbon $expiresOn The date when the subscription expires.
+     * @return void
+     */
     public function __construct($model, $subscription, $expiresOn)
     {
         $this->model = $model;

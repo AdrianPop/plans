@@ -13,6 +13,13 @@ class FeatureUnconsumed
     public $used;
     public $remaining;
 
+    /**
+     * @param SubscriptionModel $subscription Subscription on which action was done.
+     * @param FeatureModel $feature The feature that was consumed.
+     * @param int $used The amount used on this unconsumption.
+     * @param int $remaining The amount remaining for this feature.
+     * @return void
+     */
     public function __construct($subscription, $feature, $used, $remaining)
     {
         $this->subscription = $subscription;

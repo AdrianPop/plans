@@ -140,13 +140,29 @@ trait HasPlans
      * @param bool $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
      * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
      */
-    public function upgradeTo($newPlan, $duration = 30, $startFromNow = true)
+    public function upgradeCurrentPlanTo($newPlan, $duration = 30, $startFromNow = true)
     {
         if (! $this->hasActiveSubscription()) {
             return $this->subscribeTo($newPlan, $duration);
         }
 
-        return $this->activeSubscription()->upgradeTo($newPlan, $duration, $startFromNow);
+        if ($duration < 1) {
+            return false;
+        }
+
+        $activeSubscription = $this->activeSubscription();
+        $subscription = $this->extendCurrentSubscriptionWith($duration, $startFromNow);
+        $oldPlan = $activeSubscription->plan()->first();
+
+        if ($subscription->plan_id != $newPlan->id) {
+            $subscription->update([
+                'plan_id' => $newPlan->id,
+            ]);
+        }
+
+        event(new \Rennokki\Plans\Events\UpgradeSubscription($this, $subscription, $duration, $startFromNow, $oldPlan, $newPlan));
+
+        return $subscription;
     }
 
     /**
@@ -157,13 +173,37 @@ trait HasPlans
      * @param bool $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
      * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
      */
-    public function upgradeToUntil($newPlan, $date, $startFromNow = true)
+    public function upgradeCurrentPlanToUntil($newPlan, $date, $startFromNow = true)
     {
         if (! $this->hasActiveSubscription()) {
             return $this->subscribeToUntil($newPlan, $date);
         }
 
-        return $this->activeSubscription()->upgradeToUntil($newPlan, $date, $startFromNow);
+        $activeSubscription = $this->activeSubscription();
+        $subscription = $this->extendCurrentSubscriptionUntil($date, $startFromNow);
+        $oldPlan = $activeSubscription->plan()->first();
+
+        $date = Carbon::parse($date);
+
+        if ($startFromNow) {
+            if ($date->lessThanOrEqualTo(Carbon::now())) {
+                return false;
+            }
+        }
+
+        if (Carbon::parse($subscription->expires_on)->greaterThan($date)) {
+            return false;
+        }
+
+        if ($subscription->plan_id != $newPlan->id) {
+            $subscription->update([
+                'plan_id' => $newPlan->id,
+            ]);
+        }
+
+        event(new \Rennokki\Plans\Events\UpgradeSubscriptionUntil($this, $subscription, $date, $startFromNow, $oldPlan, $newPlan));
+
+        return $subscription;
     }
 
     /**
@@ -179,7 +219,34 @@ trait HasPlans
             return $this->subscribeTo(($this->hasSubscriptions()) ? $this->lastActiveSubscription()->plan()->first() : config('plans.models.plan')::first(), $duration);
         }
 
-        return $this->activeSubscription()->extendWith($duration, $startFromNow);
+        if ($duration < 1) {
+            return false;
+        }
+
+        $activeSubscription = $this->activeSubscription();
+
+        if ($startFromNow) {
+            $activeSubscription->update([
+                'expires_on' => Carbon::parse($activeSubscription->expires_on)->addDays($duration),
+            ]);
+
+            event(new \Rennokki\Plans\Events\ExtendSubscription($this, $activeSubscription, $duration, $startFromNow, null));
+
+            return $activeSubscription;
+        }
+
+        $subscription = config('plans.models.subscription')::create([
+            'plan_id' => $activeSubscription->id,
+            'model_id' => $activeSubscription->model_id,
+            'model_type' => $activeSubscription->model_type,
+            'starts_on' => Carbon::parse($activeSubscription->expires_on),
+            'expires_on' => Carbon::parse($activeSubscription->expires_on)->addDays($duration),
+            'cancelled_on' => null,
+        ]);
+
+        event(new \Rennokki\Plans\Events\ExtendSubscription($this, $activeSubscription, $duration, $startFromNow, $subscription));
+
+        return $subscription;
     }
 
     /**
@@ -195,7 +262,39 @@ trait HasPlans
             return $this->subscribeToUntil(($this->hasSubscriptions()) ? $this->lastActiveSubscription()->plan()->first() : config('plans.models.plan')::first(), $date);
         }
 
-        return $this->activeSubscription()->extendUntil($date, $startFromNow);
+        $date = Carbon::parse($date);
+        $activeSubscription = $this->activeSubscription();
+
+        if ($startFromNow) {
+            if ($date->lessThanOrEqualTo(Carbon::now())) {
+                return false;
+            }
+
+            $activeSubscription->update([
+                'expires_on' => $date,
+            ]);
+
+            event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $activeSubscription, $date, $startFromNow, null));
+
+            return $activeSubscription;
+        }
+
+        if (Carbon::parse($activeSubscription->expires_on)->greaterThan($date)) {
+            return false;
+        }
+
+        $subscription = config('plans.models.subscription')::create([
+            'plan_id' => $activeSubscription->id,
+            'model_id' => $activeSubscription->model_id,
+            'model_type' => $activeSubscription->model_type,
+            'starts_on' => Carbon::parse($activeSubscription->expires_on),
+            'expires_on' => $date,
+            'cancelled_on' => null,
+        ]);
+
+        event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $activeSubscription, $date, $startFromNow, $subscription));
+
+        return $subscription;
     }
 
     /**
@@ -209,6 +308,18 @@ trait HasPlans
             return false;
         }
 
-        return $this->activeSubscription()->cancel();
+        $activeSubscription = $this->activeSubscription();
+
+        if ($activeSubscription->isCancelled() || $activeSubscription->isPendingCancellation()) {
+            return false;
+        }
+
+        $activeSubscription->update([
+            'cancelled_on' => Carbon::now(),
+        ]);
+
+        event(new \Rennokki\Plans\Events\CancelSubscription($this, $activeSubscription));
+
+        return $activeSubscription;
     }
 }
