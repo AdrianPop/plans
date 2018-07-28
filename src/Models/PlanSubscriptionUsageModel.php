@@ -15,4 +15,9 @@ class PlanSubscriptionUsageModel extends Model
     {
         return $this->belongsTo(config('plans.models.subscription'), 'subscription_id');
     }
+
+    public function scopeCode($query, $code)
+    {
+        return $query->where('code', $code);
+    }
 }

@@ -155,8 +155,8 @@ class PlanSubscriptionModel extends Model
     {
         $usageModel = config('plans.models.usage');
 
-        $usage = $this->usages()->where('code', $featureCode)->first();
-        $feature = $this->features()->where('code', $featureCode)->first();
+        $usage = $this->usages()->code($featureCode)->first();
+        $feature = $this->features()->code($featureCode)->first();
 
         if ($feature && ! $usage) {
             if ($feature->type == 'limit') {
@@ -207,8 +207,8 @@ class PlanSubscriptionModel extends Model
     {
         $usageModel = config('plans.models.usage');
 
-        $usage = $this->usages()->where('code', $featureCode)->first();
-        $feature = $this->features()->where('code', $featureCode)->first();
+        $usage = $this->usages()->code($featureCode)->first();
+        $feature = $this->features()->code($featureCode)->first();
 
         if ($feature && ! $usage) {
             if ($feature->type == 'limit') {
@@ -245,8 +245,8 @@ class PlanSubscriptionModel extends Model
      */
     public function getUsageOf($featureCode)
     {
-        $usage = $this->usages()->where('code', $featureCode)->first();
-        $feature = $this->features()->where('code', $featureCode)->first();
+        $usage = $this->usages()->code($featureCode)->first();
+        $feature = $this->features()->code($featureCode)->first();
 
         if (! $feature) {
             return;
@@ -271,8 +271,8 @@ class PlanSubscriptionModel extends Model
      */
     public function getRemainingOf($featureCode)
     {
-        $usage = $this->usages()->where('code', $featureCode)->first();
-        $feature = $this->features()->where('code', $featureCode)->first();
+        $usage = $this->usages()->code($featureCode)->first();
+        $feature = $this->features()->code($featureCode)->first();
 
         if (! $feature) {
             return 0;
