@@ -1,6 +1,6 @@
 {
     "name": "rennokki/plans",
-    "description": "Laravel Plans is a package for SaaS-like apps that need easy management over plans, features and event-driven updates on plans and subscriptions.",
+    "description": "Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.",
     "keywords": [
         "eloquent",
         "laravel",
