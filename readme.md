@@ -253,7 +253,7 @@ $user->withStripe()->withStripeToken('tok_...')->subscribeToUntil($plan, Carbon:
 
 If your plans already have prices set, you can change them mid-process, so you can have better control over the payment amounts:
 ```php
-$user->withStripe()->withStropeToken('tok_...')->setChargingPriceTo(10, 'USD')->subscribeTo($plan, 30);
+$user->withStripe()->withStripeToken('tok_...')->setChargingPriceTo(10, 'USD')->subscribeTo($plan, 30);
 ```
 
 As you can see, the charging price will be $10, no matter what the plan's price is.
@@ -284,7 +284,7 @@ You can simply call `canBeChargedForNewSubscription()` within the subscriber and
 
 Using this check method, if the subscriber does not have an active subscription, it means it expired, so we can get the last active subscription data (if it was recurrent, of course), and we can create a new subscription:
 ```php
-foreach(User:all() as $user) {
+foreach(User::all() as $user) {
     if(!$user->canBeChargedForNewSubscription()) {
         continue;
     }
