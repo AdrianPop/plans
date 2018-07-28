@@ -16,7 +16,7 @@ class PlanFeatureModel extends Model
     {
         return $this->belongsTo(config('plans.models.plan'), 'plan_id');
     }
-    
+
     public function scopeCode($query, $code)
     {
         return $query->where('code', $code);
