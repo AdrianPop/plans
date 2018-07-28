@@ -70,23 +70,23 @@ Marking a feature type can be done using:
 
 **Note: For unlimited feature, the `limit` field will be set to any negative value.**
 
-To attach features to your plan, you can use relatinship `features()`.
+To attach features to your plan, you can use the relationship `features()` and pass as many `Rennokki\Plans\Models\PlanFeatureModel`instances as you need:
 ```php
 $plan->features()->saveMany([
-    new Feature([
+    new PlanFeatureModel([
         'name' => 'Vault access',
         'code' => 'vault.access',
         'description' => 'Offering access to the vault.',
         'type' => 'feature',
     ]),
-    new Feature([
+    new PlanFeatureModel([
         'name' => 'Build minutes',
         'code' => 'build.minutes',
         'description' => 'Build minutes used for CI/CD.',
         'type' => 'limit',
         'limit' => 2000,
     ]),
-    new Feature([
+    new PlanFeatureModel([
         'name' => 'Users amount',
         'code' => 'users.amount',
         'description' => 'The maximum amount of users that can use the app at the same time.',
