@@ -15,6 +15,7 @@ $factory->define(\Rennokki\Plans\Models\PlanModel::class, function () {
         'name' => 'Testing Plan '.str_random(7),
         'description' => 'This is a testing plan.',
         'price' => (float) mt_rand(10, 200),
+        'currency' => 'EUR',
         'duration' => 30,
     ];
 });

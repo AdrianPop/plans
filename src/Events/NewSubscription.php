@@ -10,18 +10,15 @@ class NewSubscription
 
     public $model;
     public $subscription;
-    public $duration;
 
     /**
      * @param Model $model The model that subscribed.
      * @param SubscriptionModel $subscription Subscription the model has subscribed to.
-     * @param int $duration The duration, in days, of the subscription extension.
      * @return void
      */
-    public function __construct($model, $subscription, $duration)
+    public function __construct($model, $subscription)
     {
         $this->model = $model;
         $this->subscription = $subscription;
-        $this->duration = $duration;
     }
 }

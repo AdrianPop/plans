@@ -13,6 +13,8 @@ return [
         'feature' => \Rennokki\Plans\Models\FeatureModel::class,
         'usage' => \Rennokki\Plans\Models\PlanSubscriptionUsageModel::class,
 
+        'stripeCustomer' => \Rennokki\Plans\Models\StripeCustomerModel::class,
+
     ],
 
 ];

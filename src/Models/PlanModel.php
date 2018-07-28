@@ -8,7 +8,7 @@ class PlanModel extends Model
 {
     protected $table = 'plans';
     protected $fillable = [
-        'name', 'description', 'price', 'duration',
+        'name', 'description', 'price', 'currency', 'duration',
     ];
 
     public function features()

@@ -20,6 +20,8 @@ class Plans extends Migration
             $table->text('description')->nullable();
 
             $table->float('price', 8, 2);
+            $table->string('currency');
+
             $table->integer('duration')->default(30);
 
             $table->timestamps();
@@ -46,6 +48,15 @@ class Plans extends Migration
             $table->integer('model_id');
             $table->string('model_type');
 
+            $table->enum('payment_method', ['stripe'])->default('stripe');
+            $table->boolean('is_paid')->default(false);
+
+            $table->float('charging_price', 8, 2)->nullable();
+            $table->string('charging_currency')->nullable();
+
+            $table->boolean('is_recurring')->default(true);
+            $table->integer('recurring_each_days')->default(30);
+
             $table->timestamp('starts_on')->nullable();
             $table->timestamp('expires_on')->nullable();
             $table->timestamp('cancelled_on')->nullable();
@@ -59,6 +70,18 @@ class Plans extends Migration
 
             $table->string('code');
             $table->integer('used')->default(0);
+
+            $table->timestamps();
+        });
+
+        Schema::create('stripe_customers', function (Blueprint $table) {
+            $table->increments('id');
+
+            $table->integer('model_id');
+            $table->string('model_type');
+
+            $table->string('customer_id');
+            $table->string('stripe_token')->nullable();
 
             $table->timestamps();
         });

@@ -9,14 +9,7 @@
 [![PayPal](https://img.shields.io/badge/PayPal-donate-blue.svg)](https://paypal.me/rennokki)
 
 # Laravel Plans
-Laravel Plans is a package for SaaS-like apps that need easy management over plans, features and event-driven updates on plans. If you plan selling your service with subscription, you're in the right place!
-
-# Why would you use that while there's Laravel Cashier?
-Cashier is a great subscription-like feature for your Laravel app. However, if you don't encounter problems while using an app, you don't know what to improve to it.
-
-Plans include features. A lot. Some of them are just permissions you can give to your users, some are just amounts of limits for that period of time. Think about permissions to use a certain feature, or a maximum amount of SMS you can give to your users to use per month. Cashier doesn't implement that. With Laravel Plans, yOu can track the usage and the remaining amounts for limited features, for example. Or implement your unlimited features that never expire throughout the subscription period.
-
-###  However, Laravel Plans doesn't include payment methods. But it's planned for v1.5.0. Stay tuned!
+Laravel Plans is a package for SaaS-like apps that need easy management over plans, features, event-driven updates on plans or even payment tracking. If you plan selling your service with subscriptions, you're in the right place!
 
 # Installation
 Install the package:
@@ -61,6 +54,7 @@ $plan = Plan::create([
     'name' => 'My awesome plan',
     'description' => 'One of the best plans out here.',
     'price' => 9.99,
+    'currency' => 'EUR',
     'duration' => 30, // in days; doesn't have an utility yet; it is stored as information.
 ]);
 ```
@@ -103,17 +97,21 @@ $plan->features()->saveMany([
 
 # Subscribing to plans
 Your users can be subscribed to plans for a certain amount of days or until a certain date.
+You can pass a third parameter to mark this subscription as recurring or non-recurring. Set it to `false` to disable recurrency.
+For more info, check the **Payments** section at the end of the readme.
 ```php
-$susbscription = $user->subscribeTo($plan, 30);
+$susbscription = $user->subscribeTo($plan, 30, true);
 
 $subscription->remainingDays(); // 29; this is because it is 29 days, 23 hours, and so on.
 ```
 
-If you plan to subscribe your users until a certain date, you can do so with dates.
+If you plan to subscribe your users until a certain date, you can do so with dates. By default, the subscription is recurring.
 ```php
 $user->subscribeToUntil($plan, '2018-12-21');
 $user->subscribeToUntil($plan, '2018-12-21 16:54:11');
 $user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
+
+$user->subscribeToUntil($plan, '2018-12-21', false); // recurrency deactivated
 ```
 
 **Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, use `upgradeCurrentPlanTo()`, `upgradeCurrentPlanToUntil()`, `extendWith()` or `extendWithUntil()` methods to either upgrade or extend the subscription period with a certain amount of days or until a certain date.**
@@ -151,7 +149,7 @@ $user->extendCurrentSubscriptionUntil(Carbon::create(2018, 12, 21, 16, 54, 11), 
 # Cancelling subscriptions
 You can cancel subscriptions. If a subscription is not finished yet (it is not expired), it will be marked as `pending cancellation`. It will be fully cancelled when the expiration dates passes the current time.
 ```php
-$user->cancelCurrentSubscription(); // false if there is not active subscription
+$user->cancelCurrentSubscription(); // false if there is not an active subscription
 ```
 
 # Checking status for subscriptions
@@ -219,10 +217,94 @@ $subscription->getRemainingOf('build.minutes'); // 2000
 
 Using the `unconsumeFeature()` method on unlimited features will also reduce usage, but it will never reach negative values.
 
+# Payments
+By default, the app comes with a Stripe integration. You can keep using this package without Stripe if you already use your own method for payment. Be aware that there are some changes on the main migrations, so make sure you keep in touch with them.
+
+To keep it classy over Laravel Cashier, you have to configure your `config/services.php` file by adding Stripe:
+```php
+'stripe' => [
+    'key' => env('STRIPE_KEY'),
+    'secret' => env('STRIPE_SECRET'),
+],
+```
+
+# Usage of Stripe
+If you were familiar with subscribing, extending, upgrading or cancelling subscriptions without actively passing a payment method, there are some minor differences:
+* Prices for plans can be fetched from your declared plans within the table or can be changed mid-process, so don't worry.
+* Extending or Upgrading won't charge your users, only the subscribing actions will do this automatically. You want to charge your users from the moment their subscription starts, so you have to parse through all subscribers and check if their subscription expired and renew it automatically.
+* You have to pass the Stripe token before the main actions (subscribe, extend, upgrade, cancelling). This package comes with a `stripe_customers` table, and will retrieve the local one, if it exists.
+* Two new events were added to support the transactions' success & failure statuses.
+* Each subscription keeps more data about the subscription, like the amount charged or days for recurrency.
+
+To subscribe your users with a Stripe Token, do the following:
+```php
+$user->withStripe()->withStripeToken('tok_...')->subscribeTo($plan, 53);
+$user->withStripe()->withStripeToken('tok_...')->subscribeToUntil($plan, Carbon::now()->addDays(90));
+```
+
+Both of them will subscribe the user to a plan. By default, the subscriptions are marked as recurrent.
+For `subscribeTo()` and `subscribeToUntil()`, the third parameter is the recurrency, so in this case, the first one will be recurrent every 53 days while the second one, every 90 days.
+
+If you do not want it to be recurrent (only for one-time subscription), pass `false` as third parameter.
+```php
+$user->withStripe()->withStripeToken('tok_...')->subscribeTo($plan, 53, false);
+$user->withStripe()->withStripeToken('tok_...')->subscribeToUntil($plan, Carbon::now()->addDays(90), false);
+```
+
+If your plans already have prices set, you can change them mid-process, so you can have better control over the payment amounts:
+```php
+$user->withStripe()->withStropeToken('tok_...')->setChargingPriceTo(10, 'USD')->subscribeTo($plan, 30);
+```
+
+As you can see, the charging price will be $10, no matter what the plan's price is.
+
+The same trick works with `extendCurrentSubscriptionWith()`, `extendCurrentSubscriptionUntil()`, `upgradeupgradeCurrentPlanTo()`, and `upgradeCurrentPlanToUntil()`.
+**Please note that for these 4 methods, passing recurrency boolean is on the fourth parameter, not on third.**
+
+Each time you are charging someone, it will check if there is a local Stripe Customer to retrieve the token and will use it if it exists. If your customer has a local token stored, you won't need to call `withStripetoken()` method anymore:
+```php
+$user->withStripe()->subscribeTo($plan, 30);
+```
+
+To update the Stripe Token of the user on-demand, you can use the `updateStripeToken()` method. Your user needs to have a valid Stripe Customer stored.
+```php
+$user->updateStripeToken('visa_...');
+```
+
+On-demand, you can also delete the stored Stripe Customer.
+```php
+$user->deleteStripeCustomer();
+$user->isStripeCustomer(); // false
+```
+
+# Handling recurrencies
+Since this package does not support built-in Stripe Plans due to the fact that anyone is free to set its recurrency time to any number of days, not just weekly, monthly or yearly, you have to parse your own subscribers and charge them.
+
+You can simply call `canBeChargedForNewSubscription()` within the subscriber and then just try to charge for the last active subscription's data (since it's the last one the subscriber had) so we can renew it.
+
+Using this check method, if the subscriber does not have an active subscription, it means it expired, so we can get the last active subscription data (if it was recurrent, of course), and we can create a new subscription:
+```php
+foreach(User:all() as $user) {
+    if(!$user->canBeChargedForNewSubscription()) {
+        continue;
+    }
+    
+    $lastActiveSubscription = $user->lastActiveSubscription();
+    $lastActiveSubscription->load(['plan']);
+    
+    $plan = $lastActiveSubscription->plan;
+    $recurringEachDays = $lastActiveSubscription->recurring_each_days;
+    $chargingPrice = $lastActiveSubscription->charging_price;
+    $chargingCurrency = $lastActiveSubscription->charging_currency;
+
+    $user->withStripe()->setChargingPriceTo($chargingPrice, $chargingCurrency)->subscribeTo($plan, $recurringEachDays);
+}
+```
+
 # Events
 When using subscription plans, you want to listen for events to automatically run code that might do changes for your app.
 
-For example, if an user automatically extends its period before the subscription ends, you can give it free bonus days for loyality.
+For example, if an user automatically extends its period before the subscription ends, you can give it free bonus days for loyality. Or you can check when a payment has failed or not.
 
 Events are easy to use. If you are not familiar, you can check [Laravel's Official Documentation on Events](https://laravel.com/docs/5.6/events).
 
@@ -238,17 +320,14 @@ $listen = [
     \Rennokki\Plans\Events\NewSubscription::class => [
         // $event->model = The model that was subscribed.
         // $event->subscription = The subscription that was created.
-        // $event->duration = The duration, in days, of the subscription.
     ],
      \Rennokki\Plans\Events\NewSubscriptionUntil::class => [
         // $event->model = The model that was subscribed.
         // $event->subscription = The subscription that was created.
-        // $event->expiresOn = The Carbon instance when the subscription will expire.
     ],
     \Rennokki\Plans\Events\ExtendSubscription::class => [
         // $event->model = The model that extended the subscription.
         // $event->subscription = The subscription that was extended.
-        // $event->duration = The duration, in days, of the subscription.
         // $event->startFromNow = If the subscription is exteded now or is created a new subscription, in the future.
         // $event->newSubscription = If the startFromNow is false, here will be sent the new subscription that starts after the current one ends.
     ],
@@ -262,7 +341,6 @@ $listen = [
     \Rennokki\Plans\Events\UpgradeSubscription::class => [
         // $event->model = The model that upgraded the subscription.
         // $event->subscription = The current subscription.
-        // $event->duration = The duration, in days, of the upgraded subscription.
         // $event->startFromNow = If the subscription is upgraded now or is created a new subscription, in the future.
         // $event->oldPlan = Here lies the current (which is now old) plan.
         // $event->newPlan = Here lies the new plan. If it's the same plan, it will match with the $event->oldPlan
@@ -286,6 +364,16 @@ $listen = [
         // $event->feature = The feature that was used.
         // $event->used = The amount reverted.
         // $event->remaining = The total amount remaining. If the feature is unlimited, will return -1
+    ],
+    \Rennokki\Plans\Events\Stripe\ChargeFailed::class => [
+        // $event->model = The model for which the payment failed.
+        // $event->subscription = The subscription.
+        // $event->exception = The exception thrown by the Stripe API wrapper.
+    ],
+    \Rennokki\Plans\Events\Stripe\ChargeSuccessful::class => [
+        // $event->model = The model for which the payment succeded.
+        // $event->subscription = The subscription which was updated as paid.
+        // $event->stripeCharge = The response coming from the Stripe API wrapper.
     ],
 ];
 ```

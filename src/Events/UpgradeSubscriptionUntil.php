@@ -21,7 +21,7 @@ class UpgradeSubscriptionUntil
      * @param Carbon $expiresOn The date when the upgraded subscription expires.
      * @param bool $startFromNow Wether the current subscription is upgraded by extending now or is upgraded at the next cycle.
      * @param null|PlanModel $oldPlan The old plan.
-     * * @param null|PlanModel $newPlan The new plan.
+     * @param null|PlanModel $newPlan The new plan.
      * @return void
      */
     public function __construct($model, $subscription, $expiresOn, $startFromNow, $oldPlan, $newPlan)

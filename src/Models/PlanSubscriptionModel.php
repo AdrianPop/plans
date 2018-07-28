@@ -11,6 +11,8 @@ class PlanSubscriptionModel extends Model
     protected $fillable = [
         'plan_id', 'model_id', 'model_type',
         'starts_on', 'cancelled_on', 'expires_on',
+        'payment_mehod',  'is_paid', 'is_recurring', 'recurring_each_days',
+        'charging_price', 'charging_currency',
     ];
     protected $dates = [
         'starts_on',
@@ -36,6 +38,46 @@ class PlanSubscriptionModel extends Model
     public function usages()
     {
         return $this->hasMany(config('plans.models.usage'), 'subscription_id');
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('is_paid', true);
+    }
+
+    public function scopeUnpaid($query)
+    {
+        return $query->where('is_paid', false);
+    }
+
+    public function scopeDue($query)
+    {
+        return $query->unpaid()->where('starts_on', '<', Carbon::now()->toDateTimeString());
+    }
+
+    public function scopeExpired($query)
+    {
+        return $query->where('expires_on', '<', Carbon::now()->toDateTimeString());
+    }
+
+    public function scopeRecurring($query)
+    {
+        return $query->where('is_recurring', true);
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->whereNotNull('cancelled_on');
+    }
+
+    public function scopeNotCancelled($query)
+    {
+        return $query->whereNull('cancelled_on');
+    }
+
+    public function scopeStripe($query)
+    {
+        return $query->where('payment_method', 'stripe');
     }
 
     /**

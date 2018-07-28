@@ -2,10 +2,13 @@
 
 namespace Rennokki\Plans\Test;
 
+use Stripe\Stripe;
+use Stripe\Token as StripeToken;
 use Rennokki\Plans\Models\PlanModel;
 use Rennokki\Plans\Test\Models\User;
 use Rennokki\Plans\Models\PlanFeatureModel;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Rennokki\Plans\Models\StripeCustomerModel;
 use Rennokki\Plans\Models\PlanSubscriptionModel;
 use Rennokki\Plans\Models\PlanSubscriptionUsageModel;
 
@@ -45,10 +48,27 @@ abstract class TestCase extends Orchestra
         $app['config']->set('plans.models.feature', PlanFeatureModel::class);
         $app['config']->set('plans.models.subscription', PlanSubscriptionModel::class);
         $app['config']->set('plans.models.usage', PlanSubscriptionUsageModel::class);
+        $app['config']->set('plans.models.stripeCustomer', StripeCustomerModel::class);
     }
 
     protected function resetDatabase()
     {
         file_put_contents(__DIR__.'/database.sqlite', null);
+    }
+
+    protected function getTestStripeToken()
+    {
+        Stripe::setApiKey(getenv('STRIPE_SECRET'));
+
+        $token = StripeToken::create([
+            'card' => [
+                'number' => '4242424242424242',
+                'exp_month' => 1,
+                'exp_year' => 2030,
+                'cvc' => '999',
+            ],
+        ]);
+
+        return $token->id;
     }
 }
