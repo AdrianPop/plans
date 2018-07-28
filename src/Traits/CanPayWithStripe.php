@@ -199,6 +199,11 @@ trait CanPayWithStripe
         ]);
     }
 
+    /**
+     * Check wether the user can be charged for a new subscription, based on last subscription's status.
+     *
+     * @return bool
+     */
     public function canBeChargedForNewSubscription()
     {
         if (! $this->hasSubscriptions()) {
