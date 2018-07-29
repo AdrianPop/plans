@@ -55,7 +55,67 @@ trait HasPlans
             return $this->activeSubscription();
         }
 
-        return $this->subscriptions()->latest('expires_on')->first();
+        return $this->subscriptions()->latest('starts_on')->paid()->notCancelled()->first();
+    }
+
+    /**
+     * Get the last subscription.
+     *
+     * @return null|PlanSubscriptionModel Either null or the last subscription.
+     */
+    public function lastSubscription()
+    {
+        if (! $this->hasSubscriptions()) {
+            return;
+        }
+
+        if ($this->hasActiveSubscription()) {
+            return $this->activeSubscription();
+        }
+
+        return $this->subscriptions()->latest('starts_on')->first();
+    }
+
+    /**
+     * Get the last unpaid subscription, if any.
+     *
+     * @return PlanSubscriptionModel
+     */
+    public function lastUnpaidSubscription()
+    {
+        return $this->subscriptions()->latest('starts_on')->notCancelled()->unpaid()->first();
+    }
+
+    /**
+     * When a subscription is due, it means it was created, but not paid.
+     * For example, on subscription, if your user wants to subscribe to another subscription and has a due (unpaid) one, it will
+     * check for the last due, will cancel it, and will re-subscribe to it.
+     *
+     * @return null|PlanSubscriptionModel Null or a Plan Subscription instance.
+     */
+    public function lastDueSubscription()
+    {
+        if (! $this->hasSubscriptions()) {
+            return;
+        }
+
+        if ($this->hasActiveSubscription()) {
+            return;
+        }
+
+        $lastActiveSubscription = $this->lastActiveSubscription();
+
+        if (! $lastActiveSubscription) {
+            return $this->lastUnpaidSubscription();
+        }
+
+        $lastSubscription = $this->lastSubscription();
+
+        if ($lastActiveSubscription->is($lastSubscription)) {
+            return;
+        }
+
+        return $this->lastUnpaidSubscription();
     }
 
     /**
@@ -79,6 +139,16 @@ trait HasPlans
     }
 
     /**
+     * Check if the mode has a due, unpaid subscription.
+     *
+     * @return bool
+     */
+    public function hasDueSubscription()
+    {
+        return (bool) $this->lastDueSubscription();
+    }
+
+    /**
      * Subscribe the binded model to a plan. Returns false if it has an active subscription already.
      *
      * @param PlanModel $plan The Plan model instance.
@@ -94,13 +164,17 @@ trait HasPlans
             return false;
         }
 
+        if ($this->hasDueSubscription()) {
+            $this->lastDueSubscription()->delete();
+        }
+
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
             'starts_on' => Carbon::now(),
             'expires_on' => Carbon::now()->addDays($duration),
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
-            'is_paid' => ($this->subscriptionPaymentMethod) ? false : true,
+            'is_paid' => (bool) ($this->subscriptionPaymentMethod) ? false : true,
             'charging_price' => ($this->chargingPrice) ?: $plan->price,
             'charging_currency' => ($this->chargingCurrency) ?: $plan->currency,
             'is_recurring' => $isRecurring,
@@ -144,13 +218,17 @@ trait HasPlans
             return false;
         }
 
+        if ($this->hasDueSubscription()) {
+            $this->lastDueSubscription()->delete();
+        }
+
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
             'starts_on' => Carbon::now(),
             'expires_on' => $date,
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
-            'is_paid' => ($this->subscriptionPaymentMethod) ? false : true,
+            'is_paid' => (bool) ($this->subscriptionPaymentMethod) ? false : true,
             'charging_price' => ($this->chargingPrice) ?: $plan->price,
             'charging_currency' => ($this->chargingCurrency) ?: $plan->currency,
             'is_recurring' => $isRecurring,
@@ -394,5 +472,53 @@ trait HasPlans
         event(new \Rennokki\Plans\Events\CancelSubscription($this, $activeSubscription));
 
         return $activeSubscription;
+    }
+
+    /**
+     * Renew the subscription, if needed, and create a new charge
+     * if the last active subscription was using Stripe and was paid.
+     *
+     * @param string $stripeToken The stripe Token for integrated Stripe Charge feature.
+     * @return false|PlanSubscriptionModel
+     */
+    public function renewSubscription($stripeToken = null)
+    {
+        if (! $this->hasSubscriptions()) {
+            return false;
+        }
+
+        if ($this->hasActiveSubscription()) {
+            return false;
+        }
+
+        if ($this->hasDueSubscription()) {
+            return $this->chargeForLastDueSubscription();
+        }
+
+        $lastActiveSubscription = $this->lastActiveSubscription();
+
+        if (! $lastActiveSubscription) {
+            return false;
+        }
+
+        if (! $lastActiveSubscription->is_recurring || $lastActiveSubscription->isCancelled()) {
+            return false;
+        }
+
+        $lastActiveSubscription->load(['plan']);
+        $plan = $lastActiveSubscription->plan;
+        $recurringEachDays = $lastActiveSubscription->recurring_each_days;
+
+        if ($lastActiveSubscription->payment_method) {
+            if (! $lastActiveSubscription->is_paid) {
+                return false;
+            }
+
+            if ($lastActiveSubscription->payment_method == 'stripe') {
+                return $this->withStripe()->withStripeToken($stripeToken)->subscribeTo($plan, $recurringEachDays);
+            }
+        }
+
+        return $this->subscribeTo($plan, $recurringEachDays);
     }
 }

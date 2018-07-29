@@ -44,6 +44,9 @@ class FeatureTest extends TestCase
             ]),
         ]);
 
+        $this->assertEquals($this->plan->features()->limited()->count(), 2);
+        $this->assertEquals($this->plan->features()->feature()->count(), 1);
+
         $this->assertEquals($subscription->features()->count(), 3);
         $this->assertEquals($subscription->usages()->count(), 0);
 
@@ -100,6 +103,9 @@ class FeatureTest extends TestCase
                 'limit' => -1,
             ]),
         ]);
+
+        $this->assertEquals($this->plan->features()->limited()->count(), 2);
+        $this->assertEquals($this->plan->features()->feature()->count(), 1);
 
         $this->assertTrue($subscription->consumeFeature('build.minutes', 30));
         $this->assertEquals($subscription->usages()->where('code', 'build.minutes')->first()->used, 30);

@@ -15,9 +15,4 @@ class PlanModel extends Model
     {
         return $this->hasMany(config('plans.models.feature'), 'plan_id');
     }
-
-    public function subscriptions()
-    {
-        return $this->hasMany(config('plans.models.subscription'), 'plan_id');
-    }
 }

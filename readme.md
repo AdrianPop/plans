@@ -261,7 +261,7 @@ If you are now pretty familiar with subscribing, extending, upgrading or cancell
 
 * **Extending or Upgrading won't charge your users**, only the subscribing methods will do this automatically for you, if you told the package so. 
 You want to charge your users from the moment their subscription starts, so you have to parse through all subscribers and check if their subscription expired and renew it automatically in a cronned command, for example.
-* **You have to pass a Stripe token**. By default, when an user subscribes for the first time and it uses a Stripe Token, a Stripe Customer is created both in Stripe & local database table `stripe_customers`. Next time you want to charge the user, you may not pass again the token since the package will retrieve it from the table.
+* **You have to pass a Stripe token**. You need to pass a Stripe token each time you want to make the payment. This package helps you keep track of your customers by having a local table for Stripe Customers.
 * **Events are triggered for successful or failed payments**. No webhooks to set up. Events are driven for Stripe Charge, either it's a failure or a success.
 
 # Subscribing with Stripe Charge
@@ -270,33 +270,14 @@ To subscribe your users with a Stripe Token, you have to explicitly pass a Strip
 $user->withStripe()->withStripeToken('tok_...')->subscribeTo($plan, 53); // 53 days
 ```
 
-If your user is stored locally in the `stripe_customers` table, you may not pass the `withStripeToken()` method:
-```php
-if($user->isStripeCustomer()) {
-    $user->withStripe()->subscribeTo($plan, 30);
-}
-```
-
-To update the Stripe Token of the user on-demand, you can use the `updateStripeToken()` method. Your user needs to have a valid Stripe Customer stored.
-```php
-$user->updateStripeToken('visa_...');
-```
-
-On-demand, you can also delete the stored Stripe Customer.
-```php
-$user->deleteStripeCustomer();
-$user->isStripeCustomer(); // false
-```
-
 By default, the charging amount are retrieved from the `plans` table. However, you can change the price mid-process, at your discretion:
 ```php
-$user->withStripe()->setChargingPriceTo(10, 'USD')->subscribeTo($plan, 30);
+$user->withStripe()->setChargingPriceTo(10, 'USD')->withStripeToken('tok_...')->subscribeTo($plan, 30);
 ```
 
 The charging price will be $10, no matter what the plan's price is, since we overrode the charging price.
 
 Since charging doesn't work with  `extendCurrentSubscriptionWith()`, `extendCurrentSubscriptionUntil()`, `upgradeupgradeCurrentPlanTo()`, and `upgradeCurrentPlanToUntil()`, using `withStripe()` will have no effect, unless you tell them to create a new plan, in extension to the current one:
-
 ```php
 // This will create a new upgraded plan that starts at the end of the current one, which is recurring and will be needed to be paid to be active.
 $user->withStripe()->upgradeCurrentPlanTo($plan, 30, false, true);
@@ -306,75 +287,55 @@ Keep in mind, even like this, the method won't charge your user because the new 
 
 # Recurrency
 This package doesn't support what Cashier supports: Stripe Plans & Stripe Coupons.
-This package is able to make you the controller, without using a third party to handle subscriptions and recurrency. The main advantage is that you can define your own recurrency amount of days, while Stripe is limited to daily, weekly, monthly and yearly.
+This package is able to make you the master, without using a third party to handle subscriptions and recurrency. The main advantage is that you can define your own recurrency amount of days, while Stripe is limited to daily, weekly, monthly and yearly.
 
-To do so, you will have to go through each of your subscribers and use the built-in method called `canBeChargedForNewSubscription()` which tells you if you should subscribe the user to the expired subscription's plan and charge him again - this is recurrency.
+To handle recurrency, there is a method called `renewSubscription` that does the job for you. You will have to loop through all your subscribers. 
+Preferably, you should run a cron command that will call the method on each subscriber.
 
+This method will renew (if needed) the subscription for the user.
 ```php
-foreach(User:all() as $user) {
-    if (! $user->canBeChargedForNewSubscription()) {
-        continue;
-    }
-    
-    // We get the last, expired active subscription and we load its plan.
-    $lastActiveSubscription = $user->lastActiveSubscription();
-    $lastActiveSubscription->load(['plan']);
-    
-    $plan = $lastActiveSubscription->plan;
-    $recurringEachDays = $lastActiveSubscription->recurring_each_days;
-    $chargingPrice = $lastActiveSubscription->charging_price;
-    $chargingCurrency = $lastActiveSubscription->charging_currency;
-
-    $user->withStripe()->setChargingPriceTo($chargingPrice, $chargingCurrency)->subscribeTo($plan, $recurringEachDays);
+foreach(User::all() as $user) {
+    $user->renewSubscription();
 }
 ```
 
-By doing this, your user will be charged because the `subscribeTo()` method is used with Stripe, so the recurrency was processed.
-
-In the example, it was used `setChargingPriceTo()` which is not needed, but you can do so if you want to charge the user the same amount as the last, expired, subscription. If not, the charging price will be taken from the database, from the plan passed.
-
-If you are curious what the `canBeChargedForNewSubscription()` method do, basically, the user (subscriber) should:
-* **have subscriptions in the past**. If not, it means they were never subscribed to any plans.
-* **not have an active subscription**. If it has, it means the current one did not expired.
-* **have the last active subscription (the expired one) set as `recurring` and it should not be cancelled**. Cancelling means it should stop recurrency, and setting the subscription as non-recurrent should not get further.
-* **be paid if it has a payment method set**. If you use plans with your payment implementation, you want to process recurrency only if the last subscription was paid. Not paying is not nice.
-
-If you want to implement your own, you can override the `canBeChargedForNewSubscription()` method in your model:
+If you use the integrated Stripe Charge feature, you will have to pass a Stripe Token to charge from that user. Since Stripe Tokens are disposable (one-time use), you will have to manage getting a token from your users.
 ```php
-class User extends Model {
-    use HasPlans;
-    
-    public function canBeChargedForNewSubscription()
-    {
-        // your logic here
-        // should return boolean
-    }
-}
+$user->renewSubscription('tok...');
 ```
-Basically, the code which comes with the package looks like this:
+
+As always, if the payment was processed, it will fire the `Rennokki\Plans\Stripe\ChargeSuccessful` event, or if the payment failed, it will fire `Rennokki\Plans\Stripe\ChargeFailed` event.
+
+# Due subscriptions
+Subscriptions that are not using the local Stripe Charge feature will never be marked as `Due` since all of them are paid, by default.
+
+If your app uses your own payment method, you can pass a closure for the following `chargeForLastDueSubscription()` method that will help you get control over the due subscription:
 ```php
-public function canBeChargedForNewSubscription()
-{
-    if (! $this->hasSubscriptions()) {
-        return false;
+$user->chargeForLastDueSubscription(function($subscription) {
+    // process the payment here
+
+    if($paymentSuccessful) {
+        $subscription->update([
+            'is_paid' => true,
+            'starts_on' => Carbon::now(),
+            'expires_on' => Carbon::now()->addDays($subscription->recurring_each_days),
+        ]);
+        
+        return $subscription;
     }
     
-    $currentSubscription = $subscriber->currentSubscription();
-    if ($currentSubscription) {
-        return false;
-    }
-    
-    $lastActiveSubscription = $subscriber->lastActiveSubscription();
-    if (! $lastActiveSubscription->is_recurring || $lastActiveSubscription->isCancelled()) {
-        return false;
-    }
-    
-    if ($lastActiveSubscription->payment_method && ! $lastActiveSubscription->is_paid) {
-        return false;
-    }
-    return true;
-}
+    return null;
+});
 ```
+
+On failed payment, they are marked as Due. They need to be paid, and each action like subscribing, upgrading or extending will always try to re-pay the subscription by deleting the last one, creating the one intended in one of the actions mentioned and trying to pay it.
+
+To do so, `chargeForLastDueSubscription()` will help you charge the user for the last, unpaid subscription. You will have to explicitly pass a Stripe Token for this:
+```php
+$user->withStripe()->withStripeToken('tok_...')->chargeForLastDueSubscription();
+```
+
+For this method, `\Rennokki\Plans\Events\Stripe\DueSubscriptionChargeSuccess` and `\Rennokki\Plans\Events\Stripe\DueSubscriptionChargeFailed` are thrown on succesful charge or failed charge.
 
 # Events
 When using subscription plans, you want to listen for events to automatically run code that might do changes for your app.
@@ -446,6 +407,16 @@ $listen = [
     \Rennokki\Plans\Events\Stripe\ChargeSuccessful::class => [
         // $event->model = The model for which the payment succeded.
         // $event->subscription = The subscription which was updated as paid.
+        // $event->stripeCharge = The response coming from the Stripe API wrapper.
+    ],
+    \Rennokki\Plans\Events\Stripe\DueSubscriptionChargeFailed::class => [
+        // $event->model = The model for which the payment failed.
+        // $event->subscription = The due subscription that cannot be paid.
+        // $event->exception = The exception thrown by the Stripe API wrapper.
+    ],
+    \Rennokki\Plans\Events\Stripe\DueSubscriptionChargeSuccess::class => [
+        // $event->model = The model for which the payment succeded.
+        // $event->subscription = The due subscription that was paid.
         // $event->stripeCharge = The response coming from the Stripe API wrapper.
     ],
 ];

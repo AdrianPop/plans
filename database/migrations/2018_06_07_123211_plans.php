@@ -48,7 +48,7 @@ class Plans extends Migration
             $table->integer('model_id');
             $table->string('model_type');
 
-            $table->enum('payment_method', ['stripe'])->default('stripe');
+            $table->enum('payment_method', ['stripe'])->nullable()->default(null);
             $table->boolean('is_paid')->default(false);
 
             $table->float('charging_price', 8, 2)->nullable();
@@ -81,7 +81,6 @@ class Plans extends Migration
             $table->string('model_type');
 
             $table->string('customer_id');
-            $table->string('stripe_token')->nullable();
 
             $table->timestamps();
         });

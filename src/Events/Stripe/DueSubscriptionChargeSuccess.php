@@ -4,7 +4,7 @@ namespace Rennokki\Plans\Events\Stripe;
 
 use Illuminate\Queue\SerializesModels;
 
-class ChargeSuccessful
+class DueSubscriptionChargeSuccess
 {
     use SerializesModels;
 
@@ -14,7 +14,7 @@ class ChargeSuccessful
 
     /**
      * @param Model $model The model on which the action was done.
-     * @param SubscriptionModel $subscription Subscription that was paid.
+     * @param SubscriptionModel $subscription Due subscription that was paid.
      * @param Stripe\Charge The result of the Stripe\Charge::create() call.
      * @return void
      */

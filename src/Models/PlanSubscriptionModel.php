@@ -11,13 +11,17 @@ class PlanSubscriptionModel extends Model
     protected $fillable = [
         'plan_id', 'model_id', 'model_type',
         'starts_on', 'cancelled_on', 'expires_on',
-        'payment_mehod',  'is_paid', 'is_recurring', 'recurring_each_days',
+        'payment_method',  'is_paid', 'is_recurring', 'recurring_each_days',
         'charging_price', 'charging_currency',
     ];
     protected $dates = [
         'starts_on',
         'expires_on',
         'cancelled_on',
+    ];
+    protected $casts = [
+        'is_paid' => 'boolean',
+        'is_recurring' => 'boolean',
     ];
 
     public function model()
@@ -48,11 +52,6 @@ class PlanSubscriptionModel extends Model
     public function scopeUnpaid($query)
     {
         return $query->where('is_paid', false);
-    }
-
-    public function scopeDue($query)
-    {
-        return $query->unpaid()->where('starts_on', '<', Carbon::now()->toDateTimeString());
     }
 
     public function scopeExpired($query)
@@ -142,6 +141,20 @@ class PlanSubscriptionModel extends Model
     public function isPendingCancellation()
     {
         return (bool) ($this->isCancelled() && $this->isActive());
+    }
+
+    /**
+     * Cancel this subscription.
+     *
+     * @return self $this
+     */
+    public function cancel()
+    {
+        $this->update([
+            'cancelled_on' => Carbon::now(),
+        ]);
+
+        return $this;
     }
 
     /**

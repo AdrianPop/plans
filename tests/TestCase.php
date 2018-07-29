@@ -14,6 +14,8 @@ use Rennokki\Plans\Models\PlanSubscriptionUsageModel;
 
 abstract class TestCase extends Orchestra
 {
+    protected $invalidStripeToken = 'tok_chargeDeclinedInsufficientFunds';
+
     public function setUp()
     {
         parent::setUp();
@@ -56,9 +58,14 @@ abstract class TestCase extends Orchestra
         file_put_contents(__DIR__.'/database.sqlite', null);
     }
 
-    protected function getTestStripeToken()
+    protected function initiateStripeAPI()
     {
-        Stripe::setApiKey(getenv('STRIPE_SECRET'));
+        return Stripe::setApiKey(getenv('STRIPE_SECRET'));
+    }
+
+    protected function getStripeTestToken()
+    {
+        $this->initiateStripeAPI();
 
         $token = StripeToken::create([
             'card' => [
@@ -70,5 +77,10 @@ abstract class TestCase extends Orchestra
         ]);
 
         return $token->id;
+    }
+
+    protected function getInvalidStripeToken()
+    {
+        return $this->invalidStripeToken;
     }
 }

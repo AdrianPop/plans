@@ -47,6 +47,9 @@ class PlanTest extends TestCase
 
         $this->assertEquals($subscription->plan_id, $this->plan->id);
         $this->assertNotNull($this->user->subscriptions()->first());
+        $this->assertEquals($this->user->subscriptions()->expired()->count(), 0);
+        $this->assertEquals($this->user->subscriptions()->recurring()->count(), 1);
+        $this->assertEquals($this->user->subscriptions()->cancelled()->count(), 0);
         $this->assertNotNull($this->user->activeSubscription());
         $this->assertNotNull($this->user->lastActiveSubscription());
         $this->assertTrue($this->user->hasActiveSubscription());
@@ -60,6 +63,9 @@ class PlanTest extends TestCase
 
         $this->assertEquals($subscription->plan_id, $this->plan->id);
         $this->assertNotNull($this->user->subscriptions()->first());
+        $this->assertEquals($this->user->subscriptions()->expired()->count(), 0);
+        $this->assertEquals($this->user->subscriptions()->recurring()->count(), 1);
+        $this->assertEquals($this->user->subscriptions()->cancelled()->count(), 0);
         $this->assertNotNull($this->user->activeSubscription());
         $this->assertNotNull($this->user->lastActiveSubscription());
         $this->assertTrue($this->user->hasActiveSubscription());
@@ -328,6 +334,15 @@ class PlanTest extends TestCase
         $this->assertEquals($subscription->remainingDays(), 14);
     }
 
+    public function testUpgradeUntilFromUserWithoutActiveSubscription()
+    {
+        $subscription = $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(15)->toDateString(), true);
+        sleep(1);
+
+        $this->assertEquals($subscription->plan_id, $this->newPlan->id);
+        $this->assertEquals($subscription->remainingDays(), 14);
+    }
+
     public function testUpgradeToFromUserNow()
     {
         $subscription = $this->user->subscribeTo($this->plan, 15);
@@ -402,6 +417,7 @@ class PlanTest extends TestCase
         $this->assertTrue($subscription->isCancelled());
         $this->assertTrue($subscription->isPendingCancellation());
         $this->assertFalse($this->user->cancelCurrentSubscription());
+        $this->assertEquals($this->user->subscriptions()->cancelled()->count(), 1);
     }
 
     public function testCancelSubscriptionFromUser()

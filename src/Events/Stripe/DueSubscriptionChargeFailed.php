@@ -4,24 +4,24 @@ namespace Rennokki\Plans\Events\Stripe;
 
 use Illuminate\Queue\SerializesModels;
 
-class ChargeSuccessful
+class DueSubscriptionChargeFailed
 {
     use SerializesModels;
 
     public $model;
     public $subscription;
-    public $stripeCharge;
+    public $exception;
 
     /**
      * @param Model $model The model on which the action was done.
-     * @param SubscriptionModel $subscription Subscription that was paid.
-     * @param Stripe\Charge The result of the Stripe\Charge::create() call.
+     * @param SubscriptionModel $subscription Subscription due.
+     * @param Exception The exception thrown by the Stripe\Charge::create() call.
      * @return void
      */
-    public function __construct($model, $subscription, $stripeCharge)
+    public function __construct($model, $subscription, $exception)
     {
         $this->model = $model;
         $this->subscription = $subscription;
-        $this->stripeCharge = $stripeCharge;
+        $this->exception = $exception;
     }
 }

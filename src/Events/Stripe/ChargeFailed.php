@@ -14,7 +14,7 @@ class ChargeFailed
 
     /**
      * @param Model $model The model on which the action was done.
-     * @param SubscriptionModel $subscription Subscription that was cancelled.
+     * @param SubscriptionModel $subscription Subscription which wasn't paid.
      * @param Exception The exception thrown by the Stripe\Charge::create() call.
      * @return void
      */

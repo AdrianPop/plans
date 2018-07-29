@@ -2,6 +2,7 @@
 
 namespace Rennokki\Plans\Traits;
 
+use Carbon\Carbon;
 use Stripe\Stripe;
 use Stripe\Charge as StripeCharge;
 use Stripe\Customer as StripeCustomer;
@@ -121,18 +122,6 @@ trait CanPayWithStripe
      */
     public function withStripeToken($stripeToken = null)
     {
-        if (! $stripeToken && $this->isStripeCustomer()) {
-            $customer = $this->getStripeCustomer();
-
-            if ($customer->stripe_token) {
-                $this->stripeToken = $customer->stripe_token;
-
-                return $this;
-            }
-
-            return $this;
-        }
-
         $this->stripeToken = $stripeToken;
 
         return $this;
@@ -152,22 +141,6 @@ trait CanPayWithStripe
     }
 
     /**
-     * Change the model's Stripe Customer's token.
-     *
-     * @return bool
-     */
-    public function updateStripeToken($newStripeToken)
-    {
-        if (! $this->isStripeCustomer()) {
-            return false;
-        }
-
-        return $this->getStripeCustomer()->update([
-            'stripe_token' => $newStripeToken,
-        ]);
-    }
-
-    /**
      * Initiate a charge with Stripe.
      *
      * @param float $amount The amount charged.
@@ -177,17 +150,11 @@ trait CanPayWithStripe
      */
     public function chargeWithStripe($amount, $currency, $description = null)
     {
-        if (! $this->stripeToken) {
-            return false;
-        }
-
         $customer = $this->getStripeCustomer();
 
         if (! $customer) {
             $customer = $this->createStripeCustomer();
         }
-
-        $this->updateStripeToken($this->stripeToken);
 
         $this->initiateStripeAPI();
 
@@ -200,32 +167,43 @@ trait CanPayWithStripe
     }
 
     /**
-     * Check wether the user can be charged for a new subscription, based on last subscription's status.
+     * Charge the user for the last due subscription and renew on succesful payment.
      *
-     * @return bool
+     * @return bool|PlanSubscriptionModel
      */
-    public function canBeChargedForNewSubscription()
+    public function chargeForLastDueSubscription($callback = null)
     {
-        if (! $this->hasSubscriptions()) {
+        $lastDueSubscription = $this->lastDueSubscription();
+
+        if (! $lastDueSubscription) {
             return false;
         }
 
-        $currentSubscription = $subscriber->currentSubscription();
+        $lastDueSubscription->load(['plan']);
+        $plan = $lastDueSubscription->plan;
 
-        if ($currentSubscription) {
-            return false;
+        if (! is_callable($callback)) {
+            try {
+                $stripeCharge = $this->chargeWithStripe(($this->chargingPrice) ?: $plan->price, ($this->chargingCurrency) ?: $plan->currency);
+
+                $lastDueSubscription->update([
+                    'is_paid' => true,
+                    'starts_on' => Carbon::now(),
+                    'expires_on' => Carbon::now()->addDays($lastDueSubscription->recurring_each_days),
+                ]);
+
+                event(new \Rennokki\Plans\Events\Stripe\DueSubscriptionChargeSuccess($this, $lastDueSubscription, $stripeCharge));
+            } catch (\Exception $exception) {
+                event(new \Rennokki\Plans\Events\Stripe\DueSubscriptionChargeFailed($this, $lastDueSubscription, $exception));
+
+                return false;
+            }
         }
 
-        $lastActiveSubscription = $subscriber->lastActiveSubscription();
-
-        if (! $lastActiveSubscription->is_recurring || $lastActiveSubscription->isCancelled()) {
-            return false;
+        if (is_callable($callback)) {
+            return call_user_func($callback, $lastDueSubscription);
         }
 
-        if ($lastActiveSubscription->payment_method && ! $lastActiveSubscription->is_paid) {
-            return false;
-        }
-
-        return true;
+        return $lastDueSubscription;
     }
 }
