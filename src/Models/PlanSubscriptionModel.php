@@ -161,51 +161,38 @@ class PlanSubscriptionModel extends Model
      * Consume a feature, if it is 'limit' type.
      *
      * @param string $featureCode The feature code. This feature has to be 'limit' type.
-     * @param int $amount The amount consumed.
+     * @param float $amount The amount consumed.
      * @return bool Wether the feature was consumed successfully or not.
      */
-    public function consumeFeature($featureCode, $amount)
+    public function consumeFeature(string $featureCode, float $amount)
     {
         $usageModel = config('plans.models.usage');
 
-        $usage = $this->usages()->code($featureCode)->first();
         $feature = $this->features()->code($featureCode)->first();
-
-        if ($feature && ! $usage) {
-            if ($feature->type == 'limit') {
-                $newUsage = $this->usages()->save(new $usageModel([
-                    'code' => $featureCode,
-                    'used' => 0,
-                ]));
-
-                if (! $feature->isUnlimited() && $newUsage->used + $amount > $feature->limit) {
-                    return false;
-                }
-
-                $remaining = ($feature->isUnlimited()) ? -1 : $feature->limit - ($newUsage->used + $amount);
-
-                event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
-
-                return $newUsage->update([
-                    'used' => (int) ($newUsage->used + $amount),
-                ]);
-            }
-        }
 
         if (! $feature || $feature->type != 'limit') {
             return false;
+        }
+
+        $usage = $this->usages()->code($featureCode)->first();
+
+        if (! $usage) {
+            $usage = $this->usages()->save(new $usageModel([
+                'code' => $featureCode,
+                'used' => 0,
+            ]));
         }
 
         if (! $feature->isUnlimited() && $usage->used + $amount > $feature->limit) {
             return false;
         }
 
-        $remaining = ($feature->isUnlimited()) ? -1 : $feature->limit - ($usage->used + $amount);
+        $remaining = (float) ($feature->isUnlimited()) ? -1 : $feature->limit - ($usage->used + $amount);
 
         event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
 
         return $usage->update([
-            'used' => (int) ($usage->used + $amount),
+            'used' => (float) ($usage->used + $amount),
         ]);
     }
 
@@ -213,40 +200,35 @@ class PlanSubscriptionModel extends Model
      * Reverse of the consume a feature method, if it is 'limit' type.
      *
      * @param string $featureCode The feature code. This feature has to be 'limit' type.
-     * @param int $amount The amount consumed.
+     * @param float $amount The amount consumed.
      * @return bool Wether the feature was consumed successfully or not.
      */
-    public function unconsumeFeature($featureCode, $amount)
+    public function unconsumeFeature(string $featureCode, float $amount)
     {
         $usageModel = config('plans.models.usage');
 
-        $usage = $this->usages()->code($featureCode)->first();
         $feature = $this->features()->code($featureCode)->first();
-
-        if ($feature && ! $usage) {
-            if ($feature->type == 'limit') {
-                $newUsage = $this->usages()->save(new $usageModel([
-                    'code' => $featureCode,
-                    'used' => 0,
-                ]));
-
-                event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, ($feature->isUnlimited()) ? -1 : $feature->limit));
-
-                return true;
-            }
-        }
 
         if (! $feature || $feature->type != 'limit') {
             return false;
         }
 
-        $used = ($feature->isUnlimited()) ? ($usage->used - $amount < 0) ? 0 : $usage->used - $amount : $usage->used - $amount;
-        $remaining = ($feature->isUnlimited()) ? -1 : ($used > 0) ? $feature->limit - $used : $feature->limit;
+        $usage = $this->usages()->code($featureCode)->first();
+
+        if (! $usage) {
+            $usage = $this->usages()->save(new $usageModel([
+                'code' => $featureCode,
+                'used' => 0,
+            ]));
+        }
+
+        $used = (float) ($feature->isUnlimited()) ? ($usage->used - $amount < 0) ? 0 : ($usage->used - $amount) : ($usage->used - $amount);
+        $remaining = (float) ($feature->isUnlimited()) ? -1 : ($used > 0) ? ($feature->limit - $used) : $feature->limit;
 
         event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, $remaining));
 
         return $usage->update([
-            'used' => (int) $used,
+            'used' => $used,
         ]);
     }
 
@@ -254,18 +236,14 @@ class PlanSubscriptionModel extends Model
      * Get the amount used for a limit.
      *
      * @param string $featureCode The feature code. This feature has to be 'limit' type.
-     * @return null|int Null if doesn't exist, integer with the usage.
+     * @return null|float Null if doesn't exist, integer with the usage.
      */
-    public function getUsageOf($featureCode)
+    public function getUsageOf(string $featureCode)
     {
         $usage = $this->usages()->code($featureCode)->first();
         $feature = $this->features()->code($featureCode)->first();
 
-        if (! $feature) {
-            return;
-        }
-
-        if ($feature->type != 'limit') {
+        if (! $feature || $feature->type != 'limit') {
             return;
         }
 
@@ -273,32 +251,28 @@ class PlanSubscriptionModel extends Model
             return 0;
         }
 
-        return (int) $usage->used;
+        return (float) $usage->used;
     }
 
     /**
      * Get the amount remaining for a feature.
      *
      * @param string $featureCode The feature code. This feature has to be 'limit' type.
-     * @return int The amount remaining.
+     * @return float The amount remaining.
      */
-    public function getRemainingOf($featureCode)
+    public function getRemainingOf(string $featureCode)
     {
         $usage = $this->usages()->code($featureCode)->first();
         $feature = $this->features()->code($featureCode)->first();
 
-        if (! $feature) {
-            return 0;
-        }
-
-        if ($feature->type != 'limit') {
+        if (! $feature || $feature->type != 'limit') {
             return 0;
         }
 
         if (! $usage) {
-            return (int) ($feature->isUnlimited()) ? -1 : $feature->limit;
+            return (float) ($feature->isUnlimited()) ? -1 : $feature->limit;
         }
 
-        return (int) ($feature->isUnlimited()) ? -1 : ($feature->limit - $usage->used);
+        return (float) ($feature->isUnlimited()) ? -1 : ($feature->limit - $usage->used);
     }
 }

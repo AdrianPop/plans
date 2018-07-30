@@ -292,7 +292,7 @@ class PlanTest extends TestCase
         $subscription = $this->user->subscribeTo($this->plan, 15);
         sleep(1);
 
-        $this->user->extendCurrentSubscriptionWith(Carbon::now()->addDays(30)->toDateTimeString(), false);
+        $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateTimeString(), false);
         sleep(1);
 
         $this->assertEquals($subscription->plan_id, $this->plan->id);
@@ -317,7 +317,7 @@ class PlanTest extends TestCase
         $subscription = $this->user->subscribeTo($this->plan, 15);
         sleep(1);
 
-        $this->user->extendCurrentSubscriptionWith(Carbon::now()->addDays(30)->toDateString(), false);
+        $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateString(), false);
         sleep(1);
 
         $this->assertEquals($subscription->plan_id, $this->plan->id);

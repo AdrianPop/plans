@@ -69,7 +69,7 @@ class Plans extends Migration
             $table->integer('subscription_id');
 
             $table->string('code');
-            $table->integer('used')->default(0);
+            $table->float('used', 9, 2)->default(0);
 
             $table->timestamps();
         });

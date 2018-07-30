@@ -2,6 +2,7 @@
 
 namespace Rennokki\Plans\Events\Stripe;
 
+use Stripe\Charge as StripeCharge;
 use Illuminate\Queue\SerializesModels;
 
 class ChargeSuccessful
@@ -18,7 +19,7 @@ class ChargeSuccessful
      * @param Stripe\Charge The result of the Stripe\Charge::create() call.
      * @return void
      */
-    public function __construct($model, $subscription, $stripeCharge)
+    public function __construct($model, $subscription, StripeCharge $stripeCharge)
     {
         $this->model = $model;
         $this->subscription = $subscription;

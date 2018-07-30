@@ -22,7 +22,7 @@ class ExtendSubscriptionUntil
      * @param null|SubscriptionModel $newSubscription Null if $startFromNow is true; The new subscription created in extension.
      * @return void
      */
-    public function __construct($model, $subscription, $expiresOn, $startFromNow, $newSubscription)
+    public function __construct($model, $subscription, $expiresOn, bool $startFromNow, $newSubscription)
     {
         $this->model = $model;
         $this->subscription = $subscription;

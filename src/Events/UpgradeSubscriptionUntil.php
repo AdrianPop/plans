@@ -24,7 +24,7 @@ class UpgradeSubscriptionUntil
      * @param null|PlanModel $newPlan The new plan.
      * @return void
      */
-    public function __construct($model, $subscription, $expiresOn, $startFromNow, $oldPlan, $newPlan)
+    public function __construct($model, $subscription, $expiresOn, bool $startFromNow, $oldPlan, $newPlan)
     {
         $this->model = $model;
         $this->subscription = $subscription;

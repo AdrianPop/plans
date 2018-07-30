@@ -156,7 +156,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew every $duration days.
      * @return PlanSubscription The PlanSubscription model instance.
      */
-    public function subscribeTo($plan, $duration = 30, $isRecurring = true)
+    public function subscribeTo($plan, int $duration = 30, bool $isRecurring = true)
     {
         $subscriptionModel = config('plans.models.subscription');
 
@@ -208,7 +208,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
      * @return PlanSubscription The PlanSubscription model instance.
      */
-    public function subscribeToUntil($plan, $date, $isRecurring = true)
+    public function subscribeToUntil($plan, $date, bool $isRecurring = true)
     {
         $subscriptionModel = config('plans.models.subscription');
 
@@ -263,7 +263,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
      * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
      */
-    public function upgradeCurrentPlanTo($newPlan, $duration = 30, $startFromNow = true, $isRecurring = true)
+    public function upgradeCurrentPlanTo($newPlan, int $duration = 30, bool $startFromNow = true, bool $isRecurring = true)
     {
         if (! $this->hasActiveSubscription()) {
             return $this->subscribeTo($newPlan, $duration, $isRecurring);
@@ -299,7 +299,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
      * @return PlanSubscription The PlanSubscription model instance with the new plan or the current one, extended.
      */
-    public function upgradeCurrentPlanToUntil($newPlan, $date, $startFromNow = true, $isRecurring = true)
+    public function upgradeCurrentPlanToUntil($newPlan, $date, bool $startFromNow = true, bool $isRecurring = true)
     {
         if (! $this->hasActiveSubscription()) {
             return $this->subscribeToUntil($newPlan, $date, $isRecurring);
@@ -342,7 +342,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) equivalent with $duration.
      * @return PlanSubscription The PlanSubscription model instance of the extended subscription.
      */
-    public function extendCurrentSubscriptionWith($duration = 30, $startFromNow = true, $isRecurring = true)
+    public function extendCurrentSubscriptionWith(int $duration = 30, bool $startFromNow = true, bool $isRecurring = true)
     {
         if (! $this->hasActiveSubscription()) {
             if ($this->hasSubscriptions()) {
@@ -396,7 +396,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
      * @return PlanSubscription The PlanSubscription model instance of the extended subscription.
      */
-    public function extendCurrentSubscriptionUntil($date, $startFromNow = true, $isRecurring = true)
+    public function extendCurrentSubscriptionUntil($date, bool $startFromNow = true, bool $isRecurring = true)
     {
         if (! $this->hasActiveSubscription()) {
             if ($this->hasSubscriptions()) {

@@ -120,7 +120,7 @@ trait CanPayWithStripe
      *
      * @return self
      */
-    public function withStripeToken($stripeToken = null)
+    public function withStripeToken(string $stripeToken = null)
     {
         $this->stripeToken = $stripeToken;
 
@@ -132,7 +132,7 @@ trait CanPayWithStripe
      *
      * @return self
      */
-    public function setChargingPriceTo($chargingPrice, $chargingCurrency)
+    public function setChargingPriceTo(float $chargingPrice, string $chargingCurrency)
     {
         $this->chargingPrice = $chargingPrice;
         $this->chargingCurrency = $chargingCurrency;
@@ -148,7 +148,7 @@ trait CanPayWithStripe
      * @param string $description The description of the payment. (optional)
      * @return Stripe\Charge
      */
-    public function chargeWithStripe($amount, $currency, $description = null)
+    public function chargeWithStripe(float $amount, string $currency, string $description = null)
     {
         $customer = $this->getStripeCustomer();
 
