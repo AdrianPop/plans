@@ -170,7 +170,7 @@ trait HasPlans
 
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
-            'starts_on' => Carbon::now(),
+            'starts_on' => Carbon::now()->subSeconds(1),
             'expires_on' => Carbon::now()->addDays($duration),
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
@@ -224,7 +224,7 @@ trait HasPlans
 
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
-            'starts_on' => Carbon::now(),
+            'starts_on' => Carbon::now()->subSeconds(1),
             'expires_on' => $date,
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
@@ -232,7 +232,7 @@ trait HasPlans
             'charging_price' => ($this->chargingPrice) ?: $plan->price,
             'charging_currency' => ($this->chargingCurrency) ?: $plan->currency,
             'is_recurring' => $isRecurring,
-            'recurring_each_days' => Carbon::now()->diffInDays($date),
+            'recurring_each_days' => Carbon::now()->subSeconds(1)->diffInDays($date),
         ]));
 
         if ($this->subscriptionPaymentMethod == 'stripe') {
@@ -439,7 +439,7 @@ trait HasPlans
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
             'is_recurring' => $isRecurring,
-            'recurring_each_days' => Carbon::now()->diffInDays($date),
+            'recurring_each_days' => Carbon::now()->subSeconds(1)->diffInDays($date),
         ]);
 
         event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $activeSubscription, $date, $startFromNow, $subscription));
