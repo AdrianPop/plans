@@ -58,6 +58,7 @@ $plan = PlanModel::create([
     'price' => 20.99,
     'currency' => 'EUR',
     'duration' => 30, // in days
+    'metadata' => ['key1' => 'value1', ...],
 ]);
 ```
 
@@ -78,6 +79,7 @@ $plan->features()->saveMany([
         'code' => 'vault.access',
         'description' => 'Offering access to the vault.',
         'type' => 'feature',
+        'metadata' => ['key1' => 'value1', ...],
     ]),
     new PlanFeatureModel([
         'name' => 'Build minutes',
@@ -85,6 +87,7 @@ $plan->features()->saveMany([
         'description' => 'Build minutes used for CI/CD.',
         'type' => 'limit',
         'limit' => 2000,
+        'metadata' => ['key1' => 'value1', ...],
     ]),
     new PlanFeatureModel([
         'name' => 'Users amount',
@@ -92,6 +95,7 @@ $plan->features()->saveMany([
         'description' => 'The maximum amount of users that can use the app at the same time.',
         'type' => 'limit',
         'limit' => -1, // or any negative value
+        'metadata' => ['key1' => 'value1', ...],
     ]),
     ...
 ]);
