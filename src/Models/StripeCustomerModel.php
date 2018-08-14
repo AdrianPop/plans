@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StripeCustomerModel extends Model
 {
     protected $table = 'stripe_customers';
-    protected $fillable = [
-        'model_id', 'model_type', 'customer_id',
-    ];
+    protected $guarded = [];
     protected $dates = [
         //
     ];

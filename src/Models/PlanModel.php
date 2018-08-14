@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class PlanModel extends Model
 {
     protected $table = 'plans';
-    protected $fillable = [
-        'name', 'description', 'price', 'currency', 'duration',
+    protected $guarded = [];
+    protected $casts = [
+        'metadata' => 'object',
     ];
 
     public function features()

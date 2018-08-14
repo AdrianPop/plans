@@ -8,12 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PlanSubscriptionModel extends Model
 {
     protected $table = 'plans_subscriptions';
-    protected $fillable = [
-        'plan_id', 'model_id', 'model_type',
-        'starts_on', 'cancelled_on', 'expires_on',
-        'payment_method',  'is_paid', 'is_recurring', 'recurring_each_days',
-        'charging_price', 'charging_currency',
-    ];
+    protected $guarded = [];
     protected $dates = [
         'starts_on',
         'expires_on',
