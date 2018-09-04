@@ -97,5 +97,6 @@ class Plans extends Migration
         Schema::dropIfExists('plans_features');
         Schema::dropIfExists('plans_subscriptions');
         Schema::dropIfExists('plans_usages');
+        Schema::dropIfExists('stripe_customers');
     }
 }
