@@ -371,6 +371,8 @@ trait HasPlans
             return $activeSubscription;
         }
 
+        $subscriptionModel = config('plans.models.subscription');
+
         $subscription = config('plans.models.subscription')::create([
             'plan_id' => $activeSubscription->id,
             'model_id' => $activeSubscription->model_id,
@@ -429,6 +431,8 @@ trait HasPlans
         if (Carbon::parse($activeSubscription->expires_on)->greaterThan($date)) {
             return false;
         }
+
+        $subscriptionModel = config('plans.models.subscription');
 
         $subscription = config('plans.models.subscription')::create([
             'plan_id' => $activeSubscription->id,
