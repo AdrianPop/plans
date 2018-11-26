@@ -373,17 +373,15 @@ trait HasPlans
 
         $subscriptionModel = config('plans.models.subscription');
 
-        $subscription = config('plans.models.subscription')::create([
-            'plan_id' => $activeSubscription->id,
-            'model_id' => $activeSubscription->model_id,
-            'model_type' => $activeSubscription->model_type,
+        $subscription = $this->subscriptions()->save(new $subscriptionModel([
+            'plan_id' => $activeSubscription->plan_id,
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
             'expires_on' => Carbon::parse($activeSubscription->expires_on)->addDays($duration),
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
             'is_recurring' => $isRecurring,
             'recurring_each_days' => $duration,
-        ]);
+        ]));
 
         event(new \Rennokki\Plans\Events\ExtendSubscription($this, $activeSubscription, $startFromNow, $subscription));
 
@@ -434,17 +432,15 @@ trait HasPlans
 
         $subscriptionModel = config('plans.models.subscription');
 
-        $subscription = config('plans.models.subscription')::create([
-            'plan_id' => $activeSubscription->id,
-            'model_id' => $activeSubscription->model_id,
-            'model_type' => $activeSubscription->model_type,
+        $subscription = $this->subscriptions()->save(new $subscriptionModel([
+            'plan_id' => $activeSubscription->plan_id,
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
             'expires_on' => $date,
             'cancelled_on' => null,
             'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
             'is_recurring' => $isRecurring,
             'recurring_each_days' => Carbon::now()->subSeconds(1)->diffInDays($date),
-        ]);
+        ]));
 
         event(new \Rennokki\Plans\Events\ExtendSubscriptionUntil($this, $activeSubscription, $date, $startFromNow, $subscription));
 
