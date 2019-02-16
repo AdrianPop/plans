@@ -8,6 +8,9 @@
 
 [![PayPal](https://img.shields.io/badge/PayPal-donate-blue.svg)](https://paypal.me/rennokki)
 
+# The package is not maintained anymore
+Try to fork your own version of the package or use [Laravel Spark](https://spark.laravel.com) for a complete experience on plans.
+
 # Laravel Plans
 Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.
 
