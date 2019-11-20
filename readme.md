@@ -23,7 +23,7 @@ While Laravel Cashier does this job really well, there are some features that ca
 # Installation
 Install the package:
 ```bash
-$ composer require rennokki/plans
+$ composer require vinyvicente/plans
 ```
 
 If your Laravel version does not support package discovery, add this line in the `providers` array in your `config/app.php` file:
