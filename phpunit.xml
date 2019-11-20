@@ -17,6 +17,10 @@
     <filter>
         <whitelist>
             <directory suffix=".php">src/</directory>
+            <exclude>
+                <directory suffix=".php">src/Events/Stripe</directory>
+                <file>src/Models/StripeCustomerModel.php</file>
+            </exclude>
         </whitelist>
     </filter>
 </phpunit>
