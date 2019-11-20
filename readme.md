@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/vinyvicente/plans.svg?branch=master)](https://travis-ci.org/vinyvicente/plans)
 [![codecov](https://codecov.io/gh/vinyvicente/plans/branch/master/graph/badge.svg)](https://codecov.io/gh/vinyvicente/plans/branch/master)
-[![StyleCI](https://github.styleci.io/repos/138162161/shield?branch=master)](https://github.styleci.io/repos/138162161)
+[![StyleCI](https://github.styleci.io/repos/222978600/shield?branch=master)](https://github.styleci.io/repos/222978600)
 [![Latest Stable Version](https://poser.pugx.org/vinyvicente/plans/v/stable)](https://packagist.org/packages/vinyvicente/plans)
 [![Total Downloads](https://poser.pugx.org/vinyvicente/plans/downloads)](https://packagist.org/packages/vinyvicente/plans)
 [![Monthly Downloads](https://poser.pugx.org/vinyvicente/plans/d/monthly)](https://packagist.org/packages/vinyvicente/plans)
