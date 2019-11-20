@@ -1,11 +1,11 @@
-[![Build Status](https://travis-ci.org/vinyvicente/plans.svg?branch=master)](https://travis-ci.org/vinyvicente/plans)[![codecov](https://codecov.io/gh/vinyvicente/plans/branch/master/graph/badge.svg)](https://codecov.io/gh/vinyvicente/plans/branch/master)
+[![Build Status](https://travis-ci.org/vinyvicente/plans.svg?branch=master)](https://travis-ci.org/vinyvicente/plans)[![codecov](https://codecov.io/gh/vinyvicente/plans/branch/master/graph/badge.svg)](https://codecov.io/gh/vinyvicente/plans/branch/master)     
 [![StyleCI](https://github.styleci.io/repos/222978600/shield?branch=master)](https://github.styleci.io/repos/222978600)
 [![Latest Stable Version](https://poser.pugx.org/vinyvicente/plans/v/stable)](https://packagist.org/packages/vinyvicente/plans)
 [![Total Downloads](https://poser.pugx.org/vinyvicente/plans/downloads)](https://packagist.org/packages/vinyvicente/plans)
 [![Monthly Downloads](https://poser.pugx.org/vinyvicente/plans/d/monthly)](https://packagist.org/packages/vinyvicente/plans)
 [![License](https://poser.pugx.org/vinyvicente/plans/license)](https://packagist.org/packages/vinyvicente/plans)
 
-[![PayPal](https://img.shields.io/badge/PayPal-donate-blue.svg)](https://paypal.me/vinyvicente)
+[![PicPay](https://img.shields.io/badge/PicPay-donate-brightgreen.svg)](https://paypal.me/vinyvicente)
 
 # The package is based
 This package is based by https://github.com/rennokki/plans
