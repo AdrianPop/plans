@@ -3,10 +3,10 @@
 namespace Rennokki\Plans\Traits;
 
 use Carbon\Carbon;
-use Stripe\Stripe;
+use Rennokki\Plans\Helpers\StripeHelper;
 use Stripe\Charge as StripeCharge;
 use Stripe\Customer as StripeCustomer;
-use Rennokki\Plans\Helpers\StripeHelper;
+use Stripe\Stripe;
 
 trait CanPayWithStripe
 {

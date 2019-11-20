@@ -2,15 +2,15 @@
 
 namespace Rennokki\Plans\Test;
 
-use Stripe\Stripe;
-use Stripe\Token as StripeToken;
-use Rennokki\Plans\Models\PlanModel;
-use Rennokki\Plans\Test\Models\User;
-use Rennokki\Plans\Models\PlanFeatureModel;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Rennokki\Plans\Models\StripeCustomerModel;
+use Rennokki\Plans\Models\PlanFeatureModel;
+use Rennokki\Plans\Models\PlanModel;
 use Rennokki\Plans\Models\PlanSubscriptionModel;
 use Rennokki\Plans\Models\PlanSubscriptionUsageModel;
+use Rennokki\Plans\Models\StripeCustomerModel;
+use Rennokki\Plans\Test\Models\User;
+use Stripe\Stripe;
+use Stripe\Token as StripeToken;
 
 abstract class TestCase extends Orchestra
 {
