@@ -1,23 +1,29 @@
 language: php
 
-php:
-  - 7.2
-  - 7.3
+matrix:
+  include:
+    - php: 7.2
+    - php: 7.3
+      env: deps=low
+
+  fast_finish: true
 
 cache:
   directories:
-    - "$HOME/.composer/cache/files"
+    - vendor/bin/.phpunit
 
 env:
-  matrix:
+  global:
     - COMPOSER_FLAGS=""
 
 before_script:
-  - travis_retry composer self-update
-  - travis_retry composer install ${COMPOSER_FLAGS} --no-interaction --prefer-source
-
+  - |
+    export COMPOSER_UP='composer update --dev --no-interaction --no-progress --no-suggest --ansi'
+  - |
+    if [[ $deps = low ]]; then
+        $COMPOSER_UP --prefer-lowest --prefer-stable
+    else
+        $COMPOSER_UP
+    fi
 script:
-  - phpunit --coverage-text --coverage-clover=coverage.xml
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - ./vendor/bin/phpunit
