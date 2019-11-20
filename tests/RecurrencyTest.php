@@ -23,6 +23,10 @@ class RecurrencyTest extends TestCase
 
     public function testRecurrency()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(7));
         sleep(1);
 
@@ -43,6 +47,10 @@ class RecurrencyTest extends TestCase
 
     public function testRecurrencyWithStripe()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+        
         $this->user->withStripe()->withStripeToken($this->getStripeTestToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(7));
         sleep(1);
 

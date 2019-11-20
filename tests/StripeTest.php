@@ -23,6 +23,10 @@ class StripeTest extends TestCase
 
     public function testStripeCustomer()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $this->assertFalse($this->user->isStripeCustomer());
         $this->assertFalse($this->user->deleteStripeCustomer());
 
@@ -36,6 +40,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeTo()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $customer = $this->user->createStripeCustomer();
         $subscription = $this->user->withStripe()->withStripeToken($this->getStripeTestToken())->subscribeTo($this->plan, 53);
         sleep(1);
@@ -49,6 +57,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithInvalidToken()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $customer = $this->user->createStripeCustomer();
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeTo($this->plan, 53);
         sleep(1);
@@ -63,6 +75,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntil()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getStripeTestToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(53));
         sleep(1);
 
@@ -74,6 +90,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithInvalidToken()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(53));
         sleep(1);
 
@@ -86,6 +106,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithDifferentPrice()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $customer = $this->user->createStripeCustomer();
         $subscription = $this->user->withStripe()->setChargingPriceTo(10, 'USD')->withStripeToken($this->getStripeTestToken())->subscribeTo($this->plan, 53);
         sleep(1);
@@ -99,6 +123,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithDifferentPriceAndInvalidToken()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $customer = $this->user->createStripeCustomer();
         $subscription = $this->user->withStripe()->setChargingPriceTo(10, 'USD')->withStripeToken($this->getInvalidStripeToken())->subscribeTo($this->plan, 53);
         sleep(1);
@@ -113,6 +141,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithDifferentPrice()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->setChargingPriceTo(100, 'JPY')->withStripeToken($this->getStripeTestToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(53));
         sleep(1);
 
@@ -125,6 +157,10 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithDifferentPriceAndInvalidStripeToken()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->setChargingPriceTo(100, 'JPY')->subscribeToUntil($this->plan, Carbon::now()->addDays(53));
         sleep(1);
 
@@ -138,6 +174,10 @@ class StripeTest extends TestCase
 
     public function testChargeForLastDueSubscriptionWithStripe()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeTo($this->plan, 53);
         sleep(1);
 
@@ -160,6 +200,10 @@ class StripeTest extends TestCase
 
     public function testChargeForLastDueSubscriptionWithInvalidStripeToken()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeTo($this->plan, 53);
         sleep(1);
 
@@ -177,6 +221,10 @@ class StripeTest extends TestCase
 
     public function testSubscribeWhenHavingDueSubscription()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeTo($this->plan, 53);
         sleep(1);
 
@@ -201,6 +249,10 @@ class StripeTest extends TestCase
 
     public function testSubscribeUntilWhenHavingDueSubscription()
     {
+        if (!getenv('STRIPE_SECRET')) {
+            $this->markTestSkipped();
+        }
+
         $subscription = $this->user->withStripe()->withStripeToken($this->getInvalidStripeToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(53));
         sleep(1);
 
