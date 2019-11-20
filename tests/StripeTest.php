@@ -23,7 +23,7 @@ class StripeTest extends TestCase
 
     public function testStripeCustomer()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -40,7 +40,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeTo()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -57,7 +57,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithInvalidToken()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -75,7 +75,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntil()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -90,7 +90,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithInvalidToken()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -106,7 +106,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithDifferentPrice()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -123,7 +123,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToWithDifferentPriceAndInvalidToken()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -141,7 +141,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithDifferentPrice()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -157,7 +157,7 @@ class StripeTest extends TestCase
 
     public function testChargeOnSubscribeToUntilWithDifferentPriceAndInvalidStripeToken()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -174,7 +174,7 @@ class StripeTest extends TestCase
 
     public function testChargeForLastDueSubscriptionWithStripe()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -200,7 +200,7 @@ class StripeTest extends TestCase
 
     public function testChargeForLastDueSubscriptionWithInvalidStripeToken()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -221,7 +221,7 @@ class StripeTest extends TestCase
 
     public function testSubscribeWhenHavingDueSubscription()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
@@ -249,7 +249,7 @@ class StripeTest extends TestCase
 
     public function testSubscribeUntilWhenHavingDueSubscription()
     {
-        if (!getenv('STRIPE_SECRET')) {
+        if (! getenv('STRIPE_SECRET')) {
             $this->markTestSkipped();
         }
 
