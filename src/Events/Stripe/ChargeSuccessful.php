@@ -2,8 +2,8 @@
 
 namespace Rennokki\Plans\Events\Stripe;
 
-use Stripe\Charge as StripeCharge;
 use Illuminate\Queue\SerializesModels;
+use Stripe\Charge as StripeCharge;
 
 class ChargeSuccessful
 {

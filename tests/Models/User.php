@@ -2,8 +2,8 @@
 
 namespace Rennokki\Plans\Test\Models;
 
-use Rennokki\Plans\Traits\HasPlans;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Rennokki\Plans\Traits\HasPlans;
 
 class User extends Authenticatable
 {
