@@ -1,15 +1,15 @@
-[![Build Status](https://travis-ci.org/rennokki/plans.svg?branch=master)](https://travis-ci.org/rennokki/plans)
-[![codecov](https://codecov.io/gh/rennokki/plans/branch/master/graph/badge.svg)](https://codecov.io/gh/rennokki/plans/branch/master)
+[![Build Status](https://travis-ci.org/vinyvicente/plans.svg?branch=master)](https://travis-ci.org/vinyvicente/plans)
+[![codecov](https://codecov.io/gh/vinyvicente/plans/branch/master/graph/badge.svg)](https://codecov.io/gh/vinyvicente/plans/branch/master)
 [![StyleCI](https://github.styleci.io/repos/138162161/shield?branch=master)](https://github.styleci.io/repos/138162161)
-[![Latest Stable Version](https://poser.pugx.org/rennokki/plans/v/stable)](https://packagist.org/packages/rennokki/plans)
-[![Total Downloads](https://poser.pugx.org/rennokki/plans/downloads)](https://packagist.org/packages/rennokki/plans)
-[![Monthly Downloads](https://poser.pugx.org/rennokki/plans/d/monthly)](https://packagist.org/packages/rennokki/plans)
-[![License](https://poser.pugx.org/rennokki/plans/license)](https://packagist.org/packages/rennokki/plans)
+[![Latest Stable Version](https://poser.pugx.org/vinyvicente/plans/v/stable)](https://packagist.org/packages/vinyvicente/plans)
+[![Total Downloads](https://poser.pugx.org/vinyvicente/plans/downloads)](https://packagist.org/packages/vinyvicente/plans)
+[![Monthly Downloads](https://poser.pugx.org/vinyvicente/plans/d/monthly)](https://packagist.org/packages/vinyvicente/plans)
+[![License](https://poser.pugx.org/vinyvicente/plans/license)](https://packagist.org/packages/vinyvicente/plans)
 
-[![PayPal](https://img.shields.io/badge/PayPal-donate-blue.svg)](https://paypal.me/rennokki)
+[![PayPal](https://img.shields.io/badge/PayPal-donate-blue.svg)](https://paypal.me/vinyvicente)
 
-# The package is not maintained anymore
-Try to fork your own version of the package or use [Laravel Spark](https://spark.laravel.com) for a complete experience on plans.
+# The package is based
+This package is based by https://github.com/rennokki/plans
 
 # Laravel Plans
 Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.

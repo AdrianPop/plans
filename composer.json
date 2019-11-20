@@ -1,5 +1,5 @@
 {
-    "name": "rennokki/plans",
+    "name": "vinyvicente/plans",
     "description": "Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.",
     "keywords": [
         "eloquent",
@@ -18,11 +18,15 @@
             "email": "rennokki@gmail.com",
             "homepage": "https://twitter.com/rennokki",
             "role": "Developer"
+        },
+        {
+            "name": "Vinicius V.",
+            "email": "vinyvicente@gmail.com"
         }
     ],
     "require": {
-        "doctrine/dbal": "^2.8.0",
-        "laravel/framework": "~5.5.0|~5.6.0|~5.7.0",
+        "doctrine/dbal": "^2.8.0|^2.9.0|^2.10.0",
+        "laravel/framework": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|~6.0.0",
         "stripe/stripe-php": "^6.11.0"
     },
     "require-dev": {
