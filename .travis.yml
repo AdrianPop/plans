@@ -2,8 +2,8 @@ language: php
 
 matrix:
   include:
+    - php: 7.1
     - php: 7.2
-    - php: 7.3
       env: deps=low
 
   fast_finish: true
@@ -26,4 +26,7 @@ before_script:
         $COMPOSER_UP
     fi
 script:
-  - ./vendor/bin/phpunit
+  - ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
