@@ -10,7 +10,7 @@ class PlanTest extends TestCase
     protected $plan;
     protected $newPlan;
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 

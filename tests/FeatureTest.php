@@ -9,7 +9,7 @@ class FeatureTest extends TestCase
     protected $user;
     protected $plan;
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
