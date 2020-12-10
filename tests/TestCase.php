@@ -7,15 +7,10 @@ use Rennokki\Plans\Models\PlanFeatureModel;
 use Rennokki\Plans\Models\PlanModel;
 use Rennokki\Plans\Models\PlanSubscriptionModel;
 use Rennokki\Plans\Models\PlanSubscriptionUsageModel;
-use Rennokki\Plans\Models\StripeCustomerModel;
 use Rennokki\Plans\Test\Models\User;
-use Stripe\Stripe;
-use Stripe\Token as StripeToken;
 
 abstract class TestCase extends Orchestra
 {
-    protected $invalidStripeToken = 'tok_chargeDeclinedInsufficientFunds';
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -50,37 +45,10 @@ abstract class TestCase extends Orchestra
         $app['config']->set('plans.models.feature', PlanFeatureModel::class);
         $app['config']->set('plans.models.subscription', PlanSubscriptionModel::class);
         $app['config']->set('plans.models.usage', PlanSubscriptionUsageModel::class);
-        $app['config']->set('plans.models.stripeCustomer', StripeCustomerModel::class);
     }
 
     protected function resetDatabase()
     {
         file_put_contents(__DIR__.'/database.sqlite', null);
-    }
-
-    protected function initiateStripeAPI()
-    {
-        return Stripe::setApiKey(getenv('STRIPE_SECRET'));
-    }
-
-    protected function getStripeTestToken()
-    {
-        $this->initiateStripeAPI();
-
-        $token = StripeToken::create([
-            'card' => [
-                'number' => '4242424242424242',
-                'exp_month' => 1,
-                'exp_year' => 2030,
-                'cvc' => '999',
-            ],
-        ]);
-
-        return $token->id;
-    }
-
-    protected function getInvalidStripeToken()
-    {
-        return $this->invalidStripeToken;
     }
 }

@@ -69,11 +69,6 @@ class PlanSubscriptionModel extends Model
         return $query->whereNull('cancelled_on');
     }
 
-    public function scopeStripe($query)
-    {
-        return $query->where('payment_method', 'stripe');
-    }
-
     /**
      * Checks if the current subscription has started.
      *

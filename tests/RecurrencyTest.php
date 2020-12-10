@@ -3,10 +3,11 @@
 namespace Rennokki\Plans\Test;
 
 use Carbon\Carbon;
+use Rennokki\Plans\Test\Models\User;
 
 class RecurrencyTest extends TestCase
 {
-    protected $user;
+    protected User $user;
     protected $plan;
     protected $newPlan;
 
@@ -17,18 +18,11 @@ class RecurrencyTest extends TestCase
         $this->user = factory(\Rennokki\Plans\Test\Models\User::class)->create();
         $this->plan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
         $this->newPlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
-
-        $this->initiateStripeAPI();
     }
 
     public function testRecurrency()
     {
-        if (! getenv('STRIPE_SECRET')) {
-            $this->markTestSkipped();
-        }
-
         $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(7));
-        sleep(1);
 
         $this->user->currentSubscription()->update([
             'starts_on' => Carbon::now()->subDays(7),
@@ -38,37 +32,8 @@ class RecurrencyTest extends TestCase
         $this->assertFalse($this->user->hasActiveSubscription());
         $this->assertEquals($this->user->subscriptions()->count(), 1);
 
-        $this->assertNotNull($this->user->renewSubscription($this->getStripeTestToken()));
-        sleep(1);
-
+        $this->assertNotNull($this->user->renewSubscription());
         $this->assertTrue($this->user->hasActiveSubscription());
         $this->assertEquals($this->user->subscriptions()->count(), 2);
-    }
-
-    public function testRecurrencyWithStripe()
-    {
-        if (! getenv('STRIPE_SECRET')) {
-            $this->markTestSkipped();
-        }
-
-        $this->user->withStripe()->withStripeToken($this->getStripeTestToken())->subscribeToUntil($this->plan, Carbon::now()->addDays(7));
-        sleep(1);
-
-        $this->user->currentSubscription()->update([
-            'starts_on' => Carbon::now()->subDays(7),
-            'expires_on' => Carbon::now(),
-        ]);
-
-        $this->assertFalse($this->user->hasActiveSubscription());
-        $this->assertEquals($this->user->subscriptions()->count(), 1);
-
-        $this->assertNotNull($this->user->renewSubscription($this->getStripeTestToken()));
-        sleep(1);
-
-        $activeSubscription = $this->user->activeSubscription();
-
-        $this->assertTrue($this->user->hasActiveSubscription());
-        $this->assertEquals($this->user->subscriptions()->count(), 2);
-        $this->assertTrue($activeSubscription->is_paid);
     }
 }

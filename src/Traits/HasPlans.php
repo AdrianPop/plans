@@ -6,8 +6,6 @@ use Carbon\Carbon;
 
 trait HasPlans
 {
-    use CanPayWithStripe;
-
     /**
      * Get Subscriptions relatinship.
      *
@@ -181,20 +179,6 @@ trait HasPlans
             'recurring_each_days' => $duration,
         ]));
 
-        if ($this->subscriptionPaymentMethod == 'stripe') {
-            try {
-                $stripeCharge = $this->chargeWithStripe(($this->chargingPrice) ?: $plan->price, ($this->chargingCurrency) ?: $plan->currency);
-
-                $subscription->update([
-                    'is_paid' => true,
-                ]);
-
-                event(new \Rennokki\Plans\Events\Stripe\ChargeSuccessful($this, $subscription, $stripeCharge));
-            } catch (\Exception $exception) {
-                event(new \Rennokki\Plans\Events\Stripe\ChargeFailed($this, $subscription, $exception));
-            }
-        }
-
         event(new \Rennokki\Plans\Events\NewSubscription($this, $subscription));
 
         return $subscription;
@@ -234,20 +218,6 @@ trait HasPlans
             'is_recurring' => $isRecurring,
             'recurring_each_days' => Carbon::now()->subSeconds(1)->diffInDays($date),
         ]));
-
-        if ($this->subscriptionPaymentMethod == 'stripe') {
-            try {
-                $stripeCharge = $this->chargeWithStripe(($this->chargingPrice) ?: $plan->price, ($this->chargingCurrency) ?: $plan->currency);
-
-                $subscription->update([
-                    'is_paid' => true,
-                ]);
-
-                event(new \Rennokki\Plans\Events\Stripe\ChargeSuccessful($this, $subscription, $stripeCharge));
-            } catch (\Exception $exception) {
-                event(new \Rennokki\Plans\Events\Stripe\ChargeFailed($this, $subscription, $exception));
-            }
-        }
 
         event(new \Rennokki\Plans\Events\NewSubscriptionUntil($this, $subscription, $date));
 
@@ -475,13 +445,11 @@ trait HasPlans
     }
 
     /**
-     * Renew the subscription, if needed, and create a new charge
-     * if the last active subscription was using Stripe and was paid.
+     * Renew the subscription, if needed
      *
-     * @param string $stripeToken The stripe Token for integrated Stripe Charge feature.
      * @return false|PlanSubscriptionModel
      */
-    public function renewSubscription($stripeToken = null)
+    public function renewSubscription()
     {
         if (! $this->hasSubscriptions()) {
             return false;
@@ -512,10 +480,6 @@ trait HasPlans
         if ($lastActiveSubscription->payment_method) {
             if (! $lastActiveSubscription->is_paid) {
                 return false;
-            }
-
-            if ($lastActiveSubscription->payment_method == 'stripe') {
-                return $this->withStripe()->withStripeToken($stripeToken)->subscribeTo($plan, $recurringEachDays);
             }
         }
 
