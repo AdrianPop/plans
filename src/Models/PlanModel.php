@@ -16,4 +16,9 @@ class PlanModel extends Model
     {
         return $this->hasMany(config('plans.models.feature'), 'plan_id');
     }
+
+    public static function byCode($code)
+    {
+        return self::query()->where('code', $code)->first();
+    }
 }
