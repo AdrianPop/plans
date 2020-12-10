@@ -29,8 +29,8 @@
         }
     ],
     "require": {
-        "doctrine/dbal": "^2.8.0|^2.9.0|^2.10.0",
-        "laravel/framework": "~8.0.0"
+        "doctrine/dbal": "^3.0",
+        "laravel/framework": "~8"
     },
     "autoload": {
         "psr-4": {
