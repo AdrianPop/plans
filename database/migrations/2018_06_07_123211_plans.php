@@ -17,6 +17,7 @@ class Plans extends Migration
             $table->increments('id');
 
             $table->string('name');
+            $table->string('tag');
             $table->text('description')->nullable();
 
             $table->float('price', 8, 2);
@@ -73,17 +74,6 @@ class Plans extends Migration
 
             $table->timestamps();
         });
-
-        Schema::create('stripe_customers', function (Blueprint $table) {
-            $table->increments('id');
-
-            $table->integer('model_id');
-            $table->string('model_type');
-
-            $table->string('customer_id');
-
-            $table->timestamps();
-        });
     }
 
     /**
@@ -97,6 +87,5 @@ class Plans extends Migration
         Schema::dropIfExists('plans_features');
         Schema::dropIfExists('plans_subscriptions');
         Schema::dropIfExists('plans_usages');
-        Schema::dropIfExists('stripe_customers');
     }
 }

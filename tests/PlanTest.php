@@ -3,20 +3,26 @@
 namespace Rennokki\Plans\Test;
 
 use Carbon\Carbon;
+use Rennokki\Plans\Models\PlanModel;
+use Rennokki\Plans\Test\Models\User;
 
 class PlanTest extends TestCase
 {
-    protected $user;
-    protected $plan;
-    protected $newPlan;
+    protected User $user;
+    protected PlanModel $plan;
+    protected PlanModel $upgradePlan;
+    protected PlanModel $newPlan;
+    protected PlanModel $smsPlan;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = factory(\Rennokki\Plans\Test\Models\User::class)->create();
-        $this->plan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
-        $this->newPlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
+        $this->plan = factory(\Rennokki\Plans\Models\PlanModel::class)->create(['tag' => 'default']);
+        $this->upgradePlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create(['tag' => 'default']);
+        $this->newPlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create(['tag' => 'new']);
+        $this->smsPlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create(['tag' => 'sms']);
     }
 
     public function testNoSubscriptions()
@@ -43,16 +49,26 @@ class PlanTest extends TestCase
     public function testSubscribeTo()
     {
         $subscription = $this->user->subscribeTo($this->plan, 15);
+        $this->user->subscribeTo($this->smsPlan, 365 * 10, false);
         sleep(1);
 
         $this->assertEquals($subscription->plan_id, $this->plan->id);
         $this->assertNotNull($this->user->subscriptions()->first());
+        $this->assertEquals(2, $this->user->subscriptions()->count());
         $this->assertEquals($this->user->subscriptions()->expired()->count(), 0);
         $this->assertEquals($this->user->subscriptions()->recurring()->count(), 1);
         $this->assertEquals($this->user->subscriptions()->cancelled()->count(), 0);
+
         $this->assertNotNull($this->user->activeSubscription());
         $this->assertNotNull($this->user->lastActiveSubscription());
         $this->assertTrue($this->user->hasActiveSubscription());
+
+        $this->assertNotNull($this->user->activeSubscription($this->smsPlan->tag));
+        $this->assertNotNull($this->user->activeSubscription($this->smsPlan->tag));
+        $this->assertTrue($this->user->hasActiveSubscription($this->smsPlan->tag));
+
+        $this->assertNull($this->user->activeSubscription($this->newPlan->tag));
+
         $this->assertEquals($subscription->remainingDays(), 14);
     }
 
@@ -119,12 +135,12 @@ class PlanTest extends TestCase
 
     public function testUpgradeToNow()
     {
-        $subscription = $this->user->subscribeTo($this->plan, 15);
+        $this->user->subscribeTo($this->plan, 15);
         sleep(1);
 
-        $subscription = $this->user->upgradeCurrentPlanTo($this->newPlan, 30, true);
+        $subscription = $this->user->upgradeCurrentPlanTo($this->upgradePlan, 30, true);
 
-        $this->assertEquals($subscription->plan_id, $this->newPlan->id);
+        $this->assertEquals($subscription->plan_id, $this->upgradePlan->id);
         $this->assertEquals($subscription->remainingDays(), 44);
     }
 
@@ -345,13 +361,17 @@ class PlanTest extends TestCase
 
     public function testUpgradeToFromUserNow()
     {
+        $this->user->subscribeTo($this->smsPlan, 3650, false);
         $subscription = $this->user->subscribeTo($this->plan, 15);
         sleep(1);
 
-        $subscription = $this->user->upgradeCurrentPlanTo($this->newPlan, 15, true);
+        $this->assertTrue($this->user->hasActiveSubscription($this->plan->tag));
+        $subscription = $this->user->upgradeCurrentPlanTo($this->upgradePlan, 15, true);
         sleep(1);
 
-        $this->assertEquals($subscription->plan_id, $this->newPlan->id);
+        $this->assertEquals($subscription->plan_id, $this->upgradePlan->id);
+
+        $this->assertEquals(2, $this->user->subscriptions()->count());
         $this->assertEquals($subscription->remainingDays(), 29);
     }
 

@@ -10,9 +10,10 @@
 |
 */
 
-$factory->define(\Rennokki\Plans\Models\PlanModel::class, function () {
+$factory->define(\Rennokki\Plans\Models\PlanModel::class, function ($faker, $attributes = []) {
     return [
         'name' => 'Testing Plan '.\Illuminate\Support\Str::random(7),
+        'tag' => $attributes['tag'] ?? 'default',
         'description' => 'This is a testing plan.',
         'price' => (float) mt_rand(10, 200),
         'currency' => 'EUR',
