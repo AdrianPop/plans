@@ -19,6 +19,8 @@ class PlanModel extends Model
 
     public static function byCode($code)
     {
-        return self::query()->where('code', $code)->first();
+        return self::query()
+            ->with('features')
+            ->where('code', $code)->first();
     }
 }

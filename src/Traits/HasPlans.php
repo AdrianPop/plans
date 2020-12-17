@@ -47,7 +47,11 @@ trait HasPlans
      */
     public function activeSubscription($tag = 'default')
     {
-        return $this->currentSubscription($tag)->paid()->notCancelled()->first();
+        return $this->currentSubscription($tag)
+            ->paid()
+            ->notCancelled()
+            ->with(['usages', 'features'])
+            ->first();
     }
 
     /**

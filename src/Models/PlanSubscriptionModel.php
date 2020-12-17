@@ -154,7 +154,7 @@ class PlanSubscriptionModel extends Model
      * @param float $amount The amount consumed.
      * @return bool Wether the feature was consumed successfully or not.
      */
-    public function consumeFeature(string $featureCode, float $amount)
+    public function consumeFeature(string $featureCode, float $amount = 1)
     {
         $usageModel = config('plans.models.usage');
 
@@ -193,7 +193,7 @@ class PlanSubscriptionModel extends Model
      * @param float $amount The amount consumed.
      * @return bool Wether the feature was consumed successfully or not.
      */
-    public function unconsumeFeature(string $featureCode, float $amount)
+    public function unconsumeFeature(string $featureCode, float $amount = 1)
     {
         $usageModel = config('plans.models.usage');
 
@@ -253,7 +253,10 @@ class PlanSubscriptionModel extends Model
     public function getRemainingOf(string $featureCode)
     {
         $usage = $this->usages()->code($featureCode)->first();
+
+        /** @var PlanFeatureModel $feature */
         $feature = $this->features()->code($featureCode)->first();
+
 
         if (! $feature || $feature->type != 'limit') {
             return 0;
@@ -264,5 +267,15 @@ class PlanSubscriptionModel extends Model
         }
 
         return (float) ($feature->isUnlimited()) ? -1 : ($feature->limit - $usage->used);
+    }
+
+    public function getLimitOf(string $featureCode)
+    {
+        $feature = $this->features()->code($featureCode)->first();
+
+        if (! $feature || $feature->type != 'limit') {
+            return 0;
+        }
+        return $feature->limit;
     }
 }
