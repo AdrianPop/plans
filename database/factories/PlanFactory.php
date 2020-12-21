@@ -14,6 +14,7 @@ $factory->define(\Rennokki\Plans\Models\PlanModel::class, function ($faker, $att
     return [
         'name' => 'Testing Plan '.\Illuminate\Support\Str::random(7),
         'tag' => $attributes['tag'] ?? 'default',
+        'code' => $attributes['code'] ?? 'free',
         'description' => 'This is a testing plan.',
         'price' => (float) mt_rand(10, 200),
         'currency' => 'EUR',
