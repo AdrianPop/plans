@@ -3,8 +3,18 @@
 namespace Rennokki\Plans\Models;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property CarbonInterface $starts_on
+ * @property CarbonInterface $expires_on
+ * @property CarbonInterface $cancelled_on
+ * @property CarbonInterface $created_at
+ * @property CarbonInterface $updated_at
+ */
 class PlanSubscriptionModel extends Model
 {
     protected $table = 'plans_subscriptions';
@@ -54,6 +64,11 @@ class PlanSubscriptionModel extends Model
         return $query->where('expires_on', '<', Carbon::now()->toDateTimeString());
     }
 
+    public function scopeExpiresIn1Hour($query)
+    {
+        return $query->where('expires_on', '<', Carbon::parse('- 1 hour')->toDateTimeString());
+    }
+
     public function scopeRecurring($query)
     {
         return $query->where('is_recurring', true);
@@ -67,6 +82,21 @@ class PlanSubscriptionModel extends Model
     public function scopeNotCancelled($query)
     {
         return $query->whereNull('cancelled_on');
+    }
+
+    public function scopeFreePlan($query)
+    {
+        return $query->whereHas('plan', fn (Builder $query) => $query->where('code', '=', PLAN_FREE));
+    }
+
+    public function scopePremiumPlan($query)
+    {
+        return $query->whereHas('plan', fn (Builder $query) => $query->where('code', '=', PLAN_PREMIUM));
+    }
+
+    public function scopeShouldBePaid($query)
+    {
+        return $query->where('charging_price', '>', 0);
     }
 
     /**
@@ -97,6 +127,11 @@ class PlanSubscriptionModel extends Model
     public function isActive()
     {
         return (bool) ($this->hasStarted() && ! $this->hasExpired());
+    }
+
+    public function isPaid()
+    {
+        return (bool) $this->is_paid;
     }
 
     /**
@@ -142,6 +177,24 @@ class PlanSubscriptionModel extends Model
     {
         $this->update([
             'cancelled_on' => Carbon::now(),
+        ]);
+
+        return $this;
+    }
+
+    public function pay()
+    {
+        $this->update([
+            'is_paid' => true
+        ]);
+
+        return $this;
+    }
+
+    public function updateChargingPrice($amount = 0)
+    {
+        $this->update([
+            'charging_price' => $amount
         ]);
 
         return $this;

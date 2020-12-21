@@ -3,13 +3,13 @@
 namespace Rennokki\Plans\Traits;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use DateTime;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Rennokki\Plans\Models\PlanModel;
 use Rennokki\Plans\Models\PlanSubscriptionModel;
 
 /**
- * @property $subscriptionPaymentMethod
  * @property $chargingPrice
  * @property $chargingCurrency
  */
@@ -82,7 +82,7 @@ trait HasPlans
      *
      * @return null|PlanSubscriptionModel Either null or the last subscription.
      */
-    public function lastSubscription($tag)
+    public function lastSubscription($tag = 'default')
     {
         if (! $this->hasSubscriptions()) {
             return;
@@ -95,6 +95,7 @@ trait HasPlans
         return $this->subscriptions()
             ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
             ->latest('starts_on')
+            ->latest('id')
             ->first();
     }
 
@@ -103,7 +104,7 @@ trait HasPlans
      *
      * @return bool|PlanSubscriptionModel
      */
-    public function lastUnpaidSubscription($tag)
+    public function lastUnpaidSubscription($tag = 'default')
     {
         return $this->subscriptions()
             ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
@@ -111,6 +112,40 @@ trait HasPlans
             ->notCancelled()
             ->unpaid()
             ->first();
+    }
+
+    public function lastShouldPaySubcription($tag = 'default')
+    {
+        return $this->subscriptions()
+            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->latest('starts_on')
+            ->notCancelled() // cancelled = null
+            ->unpaid()  // is_paid = 0
+            ->shouldBePaid()    // charging_price > 0
+            ->first();
+    }
+
+    /**
+     * Grace period
+     *
+     * For each invoice the client has N number of days to pay it
+     * grace period = new invoice is out, last subscription ended, charging price is updated, but is unpaid
+     * ...and new subscription has started
+     *
+     * @param string $tag
+     */
+    public function hasSubscriptionInGracePeriod($tag = 'default')
+    {
+        $unpaid = $this->lastUnpaidSubscription($tag);
+        $shouldPay = $this->lastShouldPaySubcription($tag);
+
+//        if (
+//            $unpaid->id !== $shouldPay->id &&
+//            $unpaid->id > $shouldPay->id
+//        )
+
+        // if the subscriptions are different, the client is in grace period
+        return !$unpaid->is($shouldPay);
     }
 
     /**
@@ -193,9 +228,19 @@ trait HasPlans
      * @param PlanModel $plan The Plan model instance.
      * @param int $duration The duration, in days, for the subscription.
      * @param bool $isRecurring Wether the subscription should auto renew every $duration days.
+     * @param bool $isPaid
+     * @param CarbonInterface $startsOn
+     * @param CarbonInterface $expiresOn
+     *
      * @return bool|PlanSubscriptionModel|bool The PlanSubscriptionModel model instance.
      */
-    public function subscribeTo($plan, int $duration = 30, bool $isRecurring = true)
+    public function subscribeTo(
+        $plan,
+        int $duration = 30,
+        bool $isRecurring = true,
+        bool $isPaid = false,
+        CarbonInterface $startsOn = null
+    )
     {
         $subscriptionModel = config('plans.models.subscription');
         $tag = $plan->tag;
@@ -205,16 +250,19 @@ trait HasPlans
         }
 
         if ($this->hasDueSubscription($tag)) {
-            $this->lastDueSubscription($tag)->delete();
+//            $this->lastDueSubscription($tag)->delete();
         }
+
+        $startsOn = $startsOn ?: Carbon::now()->subSeconds(1);
+        $expiresOn = $duration === 30 ? (clone $startsOn)->addMonths(1) : (clone $startsOn)->addDays($duration);
 
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
-            'starts_on' => Carbon::now()->subSeconds(1),
-            'expires_on' => Carbon::now()->addDays($duration),
+            'starts_on' => $startsOn,
+            'expires_on' => $expiresOn->subSecond(),
             'cancelled_on' => null,
-            'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
-            'is_paid' => (bool) ($this->subscriptionPaymentMethod) ? false : true,
+            'payment_method' => null,
+            'is_paid' => $isPaid,
             'charging_price' => ($this->chargingPrice) ?: $plan->price,
             'charging_currency' => ($this->chargingCurrency) ?: $plan->currency,
             'is_recurring' => $isRecurring,
@@ -234,7 +282,7 @@ trait HasPlans
      * @param bool $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
      * @return bool|PlanSubscriptionModel The PlanSubscriptionModel model instance.
      */
-    public function subscribeToUntil($plan, $date, bool $isRecurring = true)
+    public function subscribeToUntil($plan, $date, bool $isRecurring = true, bool $isPaid = false)
     {
         $subscriptionModel = config('plans.models.subscription');
         $date = Carbon::parse($date);
@@ -253,8 +301,8 @@ trait HasPlans
             'starts_on' => Carbon::now()->subSeconds(1),
             'expires_on' => $date,
             'cancelled_on' => null,
-            'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
-            'is_paid' => (bool) ($this->subscriptionPaymentMethod) ? false : true,
+            'payment_method' => null,
+            'is_paid' => $isPaid,
             'charging_price' => ($this->chargingPrice) ?: $plan->price,
             'charging_currency' => ($this->chargingCurrency) ?: $plan->currency,
             'is_recurring' => $isRecurring,
@@ -404,7 +452,7 @@ trait HasPlans
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
             'expires_on' => Carbon::parse($activeSubscription->expires_on)->addDays($duration),
             'cancelled_on' => null,
-            'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
+            'payment_method' => null,
             'is_recurring' => $isRecurring,
             'recurring_each_days' => $duration,
         ]));
@@ -469,7 +517,7 @@ trait HasPlans
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
             'expires_on' => $date,
             'cancelled_on' => null,
-            'payment_method' => ($this->subscriptionPaymentMethod) ?: null,
+            'payment_method' => null,
             'is_recurring' => $isRecurring,
             'recurring_each_days' => Carbon::now()->subSeconds(1)->diffInDays($date),
         ]));
@@ -509,9 +557,12 @@ trait HasPlans
     /**
      * Renew the subscription, if needed
      *
+     * @param string $tag
+     * @param CarbonInterface $expiresOn
+     *
      * @return false|PlanSubscriptionModel
      */
-    public function renewSubscription($tag = 'default')
+    public function renewSubscription($tag = 'default', CarbonInterface $expiresOn = null)
     {
         if (! $this->hasSubscriptions()) {
             return false;
@@ -535,12 +586,26 @@ trait HasPlans
         $plan = $lastActiveSubscription->plan;
         $recurringEachDays = $lastActiveSubscription->recurring_each_days;
 
-        if ($lastActiveSubscription->payment_method) {
-            if (! $lastActiveSubscription->is_paid) {
-                return false;
-            }
-        }
+        return $this->subscribeTo($plan, $recurringEachDays, true, false, $expiresOn);
+    }
 
-        return $this->subscribeTo($plan, $recurringEachDays);
+    /**
+     * Override all filters and renew subscription
+     *
+     * @param PlanSubscriptionModel $subscriptionModel
+     *
+     * @return bool|PlanSubscriptionModel
+     */
+    public function renewSubscriptionFromSubscription(PlanSubscriptionModel $subscriptionModel)
+    {
+        $subscriptionModel->load(['plan']);
+
+        return $this->subscribeTo(
+            $subscriptionModel->plan,
+            $subscriptionModel->recurring_each_days,
+            $subscriptionModel->is_recurring,
+            false,
+            $subscriptionModel->expires_on
+        );
     }
 }
