@@ -232,6 +232,12 @@ class PlanSubscriptionModel extends Model
 
         $remaining = (float) ($feature->isUnlimited()) ? -1 : $feature->limit - ($usage->used + $amount);
 
+        if ($remaining === (float) 0) {
+            $this->update([
+                'expires_on' => Carbon::now()
+            ]);
+        }
+
         event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
 
         return $usage->update([
