@@ -40,6 +40,19 @@ trait HasPlans
             ->where('expires_on', '>', Carbon::now());
     }
 
+    public function getRemainingOfByTagAndFeature($tag, $feature): float
+    {
+        $total = 0;
+
+        $this->currentSubscription('sms')
+            ->get()
+            ->each(function (PlanSubscriptionModel $s) use(&$total) {
+                $total += $s->getRemainingOf('sms');
+            });
+
+        return $total;
+    }
+
     /**
      * Return the current active subscription.
      *
@@ -246,7 +259,7 @@ trait HasPlans
         $tag = $plan->tag;
 
         if ($duration < 1 || $this->hasActiveSubscription($tag)) {
-            return false;
+//            return false;
         }
 
         if ($this->hasDueSubscription($tag)) {
