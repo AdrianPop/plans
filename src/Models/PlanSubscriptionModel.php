@@ -99,6 +99,11 @@ class PlanSubscriptionModel extends Model
         return $query->where('charging_price', '>', 0);
     }
 
+    public function scopeNoChargingPrice($query)
+    {
+        return $query->where('charging_price', '=', 0);
+    }
+
     /**
      * Checks if the current subscription has started.
      *

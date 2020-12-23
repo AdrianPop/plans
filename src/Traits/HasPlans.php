@@ -37,7 +37,8 @@ trait HasPlans
         return $this->subscriptions()
             ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '<', Carbon::now())
-            ->where('expires_on', '>', Carbon::now());
+            ->where('expires_on', '>', Carbon::now())
+            ->orderByDesc('starts_on');
     }
 
     public function getRemainingOfByTagAndFeature($tag, $feature): float
@@ -245,7 +246,7 @@ trait HasPlans
      * @param CarbonInterface $startsOn
      * @param CarbonInterface $expiresOn
      *
-     * @return bool|PlanSubscriptionModel|bool The PlanSubscriptionModel model instance.
+     * @return PlanSubscriptionModel|bool The PlanSubscriptionModel model instance.
      */
     public function subscribeTo(
         $plan,
@@ -618,7 +619,27 @@ trait HasPlans
             $subscriptionModel->recurring_each_days,
             $subscriptionModel->is_recurring,
             false,
-            $subscriptionModel->expires_on
+            // if the date is past, let subscribeTo handle the start
+            $subscriptionModel->expires_on->isPast() ? null : $subscriptionModel->expires_on
         );
+    }
+
+    /**
+     * Check if the model is or was subscribed to a plan (useful to check if the client already had a trial or not)
+     *
+     * @param string $code
+     * @param string $tag
+     *
+     * @return bool
+     */
+    public function wasSubscribedToPlan(string $code, string $tag = 'default'): bool
+    {
+        return $this->subscriptions()
+            ->when(
+                $code,
+                fn($q) => $q->whereHas('plan', fn($query) => $query->where('code', $code)->where('tag', $tag))
+            )
+            ->where('starts_on', '<', Carbon::now())
+            ->count() > 0;
     }
 }
