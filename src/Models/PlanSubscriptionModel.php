@@ -2,6 +2,7 @@
 
 namespace Rennokki\Plans\Models;
 
+use App\Models\Invoice;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -9,8 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * @property int $proforma_id
+ * @property int $invoice_id
+ * @property string $payment_method
  * @property CarbonInterface $starts_on
  * @property CarbonInterface $expires_on
+ * @property CarbonInterface $grace_until
  * @property CarbonInterface $cancelled_on
  * @property CarbonInterface $created_at
  * @property CarbonInterface $updated_at
@@ -23,11 +28,14 @@ class PlanSubscriptionModel extends Model
         'starts_on',
         'expires_on',
         'cancelled_on',
+        'grace_until',
     ];
     protected $casts = [
         'is_paid' => 'boolean',
         'is_recurring' => 'boolean',
     ];
+
+    protected $with = ['plan'];
 
     public function model()
     {
@@ -37,6 +45,16 @@ class PlanSubscriptionModel extends Model
     public function plan()
     {
         return $this->belongsTo(config('plans.models.plan'), 'plan_id');
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_d');
+    }
+
+    public function proforma()
+    {
+        return $this->belongsTo(Invoice::class, 'proforma_id');
     }
 
     public function features()
@@ -57,6 +75,16 @@ class PlanSubscriptionModel extends Model
     public function scopeUnpaid($query)
     {
         return $query->where('is_paid', false);
+    }
+
+    public function scopeNoProforma($query)
+    {
+        return $query->whereNull('proforma_id');
+    }
+
+    public function scopeNoInvoice($query)
+    {
+        return $query->whereNull('invoice_id');
     }
 
     public function scopeExpired($query)
@@ -104,6 +132,21 @@ class PlanSubscriptionModel extends Model
         return $query->where('charging_price', '=', 0);
     }
 
+    public function scopeInGracePeriod($query)
+    {
+        return $query->where('grace_until', '>', Carbon::now());
+    }
+
+    public function scopeOutsideGracePeriod($query)
+    {
+        return $query->where('grace_until', '<', Carbon::now());
+    }
+
+    public function scopeHasProforma($query)
+    {
+        return $query->whereNotNull('proforma_id');
+    }
+
     /**
      * Checks if the current subscription has started.
      *
@@ -121,7 +164,7 @@ class PlanSubscriptionModel extends Model
      */
     public function hasExpired()
     {
-        return (bool) Carbon::now()->greaterThan(Carbon::parse($this->expires_on));
+        return (bool) Carbon::now()->greaterThan($this->expires_on);
     }
 
     /**
@@ -137,6 +180,26 @@ class PlanSubscriptionModel extends Model
     public function isPaid()
     {
         return (bool) $this->is_paid;
+    }
+
+    public function isInGracePeriod()
+    {
+        return Carbon::now()->isBetween($this->expires_on, $this->grace_until);
+    }
+
+    public function isOutsideGracePeriod()
+    {
+        return $this->hasExpired() && $this->grace_until->lessThan(Carbon::now());
+    }
+
+    public function hasFreePlan()
+    {
+        return $this->plan->code === PLAN_FREE;
+    }
+
+    public function hasPremiumPlan()
+    {
+        return $this->plan->code === PLAN_PREMIUM;
     }
 
     /**

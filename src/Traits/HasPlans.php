@@ -34,7 +34,19 @@ trait HasPlans
      */
     public function currentSubscription($tag = 'default')
     {
-        return $this->subscriptions()
+        return $this
+            ->subscriptions()
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
+            ->where('starts_on', '<', Carbon::now())
+            ->where('expires_on', '>', Carbon::now())
+            ->orderByDesc('starts_on');
+    }
+
+    public function currentUnpaidSubscription($tag = 'default')
+    {
+        return $this
+            ->subscriptions()
+            ->unpaid()
             ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '<', Carbon::now())
             ->where('expires_on', '>', Carbon::now())
@@ -572,11 +584,11 @@ trait HasPlans
      * Renew the subscription, if needed
      *
      * @param string $tag
-     * @param CarbonInterface $expiresOn
+     * @param CarbonInterface $startsOn
      *
      * @return false|PlanSubscriptionModel
      */
-    public function renewSubscription($tag = 'default', CarbonInterface $expiresOn = null)
+    public function renewSubscription($tag = 'default', CarbonInterface $startsOn = null)
     {
         if (! $this->hasSubscriptions()) {
             return false;
@@ -600,7 +612,7 @@ trait HasPlans
         $plan = $lastActiveSubscription->plan;
         $recurringEachDays = $lastActiveSubscription->recurring_each_days;
 
-        return $this->subscribeTo($plan, $recurringEachDays, true, false, $expiresOn);
+        return $this->subscribeTo($plan, $recurringEachDays, true, false, $startsOn);
     }
 
     /**
