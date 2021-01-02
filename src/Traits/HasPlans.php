@@ -152,29 +152,6 @@ trait HasPlans
     }
 
     /**
-     * Grace period
-     *
-     * For each invoice the client has N number of days to pay it
-     * grace period = new invoice is out, last subscription ended, charging price is updated, but is unpaid
-     * ...and new subscription has started
-     *
-     * @param string $tag
-     */
-    public function hasSubscriptionInGracePeriod($tag = 'default')
-    {
-        $unpaid = $this->lastUnpaidSubscription($tag);
-        $shouldPay = $this->lastShouldPaySubcription($tag);
-
-//        if (
-//            $unpaid->id !== $shouldPay->id &&
-//            $unpaid->id > $shouldPay->id
-//        )
-
-        // if the subscriptions are different, the client is in grace period
-        return !$unpaid->is($shouldPay);
-    }
-
-    /**
      * When a subscription is due, it means it was created, but not paid.
      * For example, on subscription, if your user wants to subscribe to another subscription and has a due (unpaid) one, it will
      * check for the last due, will cancel it, and will re-subscribe to it.

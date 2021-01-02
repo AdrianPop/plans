@@ -49,7 +49,7 @@ class PlanSubscriptionModel extends Model
 
     public function invoice()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_d');
+        return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 
     public function proforma()
@@ -155,6 +155,16 @@ class PlanSubscriptionModel extends Model
     public function hasStarted()
     {
         return (bool) Carbon::now()->greaterThanOrEqualTo(Carbon::parse($this->starts_on));
+    }
+
+    /**
+     * There's a proforma which is not paid
+     *
+     * @return bool
+     */
+    public function needsPayment(): bool
+    {
+        return !is_null($this->proforma_id) && $this->is_paid === false;
     }
 
     /**
