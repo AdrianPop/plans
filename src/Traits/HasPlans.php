@@ -38,7 +38,7 @@ trait HasPlans
             ->subscriptions()
             ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '<', Carbon::now())
-            ->where('expires_on', '>', Carbon::now())
+            ->where('grace_until', '>', Carbon::now())
             ->orderByDesc('starts_on');
     }
 
@@ -49,7 +49,7 @@ trait HasPlans
             ->unpaid()
             ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '<', Carbon::now())
-            ->where('expires_on', '>', Carbon::now())
+            ->where('grace_until', '>', Carbon::now())
             ->orderByDesc('starts_on');
     }
 
@@ -74,7 +74,7 @@ trait HasPlans
     public function activeSubscription($tag = 'default')
     {
         return $this->currentSubscription($tag)
-            ->paid()
+//            ->paid()
             ->notCancelled()
             ->with(['usages', 'features'])
             ->first();
@@ -286,6 +286,7 @@ trait HasPlans
             'plan_id' => $plan->id,
             'starts_on' => $startsOn,
             'expires_on' => $expiresOn->subSecond(),
+            'grace_until' => (clone $expiresOn)->addDays($plan->grace),
             'cancelled_on' => null,
             'payment_method' => null,
             'is_paid' => $isPaid,
@@ -326,6 +327,7 @@ trait HasPlans
             'plan_id' => $plan->id,
             'starts_on' => Carbon::now()->subSeconds(1),
             'expires_on' => $date,
+            'grace_until' => (clone $date)->addDays($plan->grace),
             'cancelled_on' => null,
             'payment_method' => null,
             'is_paid' => $isPaid,
@@ -472,11 +474,12 @@ trait HasPlans
         }
 
         $subscriptionModel = config('plans.models.subscription');
-
+        $expiresOn = Carbon::parse($activeSubscription->expires_on)->addDays($duration);
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $activeSubscription->plan_id,
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
-            'expires_on' => Carbon::parse($activeSubscription->expires_on)->addDays($duration),
+            'expires_on' => $expiresOn,
+            'grace_until' => (clone $expiresOn)->addDays($activeSubscription->plan->grace),
             'cancelled_on' => null,
             'payment_method' => null,
             'is_recurring' => $isRecurring,
@@ -542,6 +545,7 @@ trait HasPlans
             'plan_id' => $activeSubscription->plan_id,
             'starts_on' => Carbon::parse($activeSubscription->expires_on),
             'expires_on' => $date,
+            'grace_until' => (clone $date)->addDays($activeSubscription->plan->grace),
             'cancelled_on' => null,
             'payment_method' => null,
             'is_recurring' => $isRecurring,
@@ -595,7 +599,7 @@ trait HasPlans
         }
 
         if ($this->hasActiveSubscription($tag)) {
-            return false;
+//            return false;
         }
 
         $lastActiveSubscription = $this->lastActiveSubscription($tag);
@@ -619,20 +623,28 @@ trait HasPlans
      * Override all filters and renew subscription
      *
      * @param PlanSubscriptionModel $subscriptionModel
+     * @param bool $useExpiresOnAsStartsOn true = sub will start from previous expires_on
      *
      * @return bool|PlanSubscriptionModel
      */
-    public function renewSubscriptionFromSubscription(PlanSubscriptionModel $subscriptionModel)
+    public function renewSubscriptionFromSubscription(
+        PlanSubscriptionModel $subscriptionModel,
+        bool $useExpiresOnAsStartsOn = true
+    )
     {
         $subscriptionModel->load(['plan']);
+
+        $startsOn = $useExpiresOnAsStartsOn ?
+            $subscriptionModel->expires_on :
+            // used when an older sub needs to be renewed
+            ($subscriptionModel->expires_on->isPast() ? null : $subscriptionModel->expires_on);
 
         return $this->subscribeTo(
             $subscriptionModel->plan,
             $subscriptionModel->recurring_each_days,
             $subscriptionModel->is_recurring,
             false,
-            // if the date is past, let subscribeTo handle the start
-            $subscriptionModel->expires_on->isPast() ? null : $subscriptionModel->expires_on
+            $startsOn
         );
     }
 
