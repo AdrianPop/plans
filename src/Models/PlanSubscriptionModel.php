@@ -415,4 +415,16 @@ class PlanSubscriptionModel extends Model
         }
         return $feature->limit;
     }
+
+    /**
+     * @param  int  $proformaId
+     *
+     * @return static
+     */
+    public static function byProformaId(int $proformaId): self
+    {
+        return self::query()
+            ->where('proforma_id', $proformaId)
+            ->firstOrFail();
+    }
 }

@@ -151,6 +151,19 @@ trait HasPlans
             ->first();
     }
 
+    public function lastCancelledAndUnpaidSubscription($tag = 'default')
+    {
+        return $this->subscriptions()
+            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->latest('starts_on')
+            ->cancelled() // cancelled = null
+            ->unpaid()  // is_paid = 0
+            ->shouldBePaid()    // charging_price > 0
+            ->premiumPlan()
+            ->hasProforma()
+            ->first();
+    }
+
     /**
      * When a subscription is due, it means it was created, but not paid.
      * For example, on subscription, if your user wants to subscribe to another subscription and has a due (unpaid) one, it will
