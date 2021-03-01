@@ -394,7 +394,6 @@ class PlanSubscriptionModel extends Model
         /** @var PlanFeatureModel $feature */
         $feature = $this->features()->code($featureCode)->first();
 
-
         if (! $feature || $feature->type != 'limit') {
             return 0;
         }
