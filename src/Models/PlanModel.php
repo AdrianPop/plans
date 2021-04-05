@@ -42,7 +42,7 @@ class PlanModel extends Model
     {
         return self::query()
             ->with('features')
-            ->where('code', $code)->first();
+            ->where('code', $code)->firstOrFail();
     }
 
     public static function byCodeAndTag($code, $tag)
