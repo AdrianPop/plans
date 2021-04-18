@@ -74,7 +74,7 @@ trait HasPlans
             ->subscriptions()
             ->whereHas('plan', fn ($query) => $query->where('tag', $tag))
             ->where('starts_on', '<', Carbon::now())
-            ->where('grace_until', '>', Carbon::now())
+            ->where('expires_on', '>', Carbon::now())
             ->with(['usages', 'features'])
             ->orderBy('id')
             ->notCancelled()
@@ -123,7 +123,8 @@ trait HasPlans
 
         return $this->subscriptions()
             ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
-            ->latest('starts_on')
+            ->where('starts_on', '<', Carbon::now())
+            ->where('grace_until', '>', Carbon::now())
             ->paid()
             ->notCancelled()
             ->first();
@@ -149,6 +150,39 @@ trait HasPlans
             ->latest('starts_on')
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * Check if the user has an upgrade or a downgrade after this subscription
+     *
+     * @param  string  $tag
+     *
+     * @return null|PlanSubscriptionModel
+     */
+    public function nextSubscription($tag = 'default')
+    {
+        if (!$this->hasSubscriptions() || !$this->hasActiveSubscription($tag)) {
+            return;
+        }
+
+        $subscription = $this->activeSubscription($tag);
+
+        return $this->subscriptions()
+            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->where('starts_on', '>=', $subscription->expires_on)
+            ->first();
+    }
+
+    /**
+     * Check if the user has an upgrade or a downgrade after this subscription
+     *
+     * @param  string  $tag
+     *
+     * @return bool
+     */
+    public function hasNextSubscription($tag = 'default')
+    {
+        return (bool) $this->nextSubscription($tag);
     }
 
     /**
