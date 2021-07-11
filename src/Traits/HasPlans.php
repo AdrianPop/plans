@@ -59,7 +59,7 @@ trait HasPlans
 
         $this->currentSubscription($tag)
             ->get()
-            ->each(function (PlanSubscriptionModel $s) use(&$total, $feature) {
+            ->each(function (PlanSubscriptionModel $s) use (&$total, $feature) {
                 $total += $s->getRemainingOf($feature);
             });
 
@@ -72,7 +72,7 @@ trait HasPlans
 
         $this->currentSubscription($tag)
             ->get()
-            ->each(function (PlanSubscriptionModel $s) use(&$total, $feature) {
+            ->each(function (PlanSubscriptionModel $s) use (&$total, $feature) {
                 $total += $s->getLimitOf($feature);
             });
 
@@ -131,7 +131,7 @@ trait HasPlans
         }
 
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '<', Carbon::now())
             ->where('grace_until', '>', Carbon::now())
             ->paid()
@@ -155,7 +155,7 @@ trait HasPlans
         }
 
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->latest('starts_on')
             ->latest('id')
             ->first();
@@ -177,7 +177,7 @@ trait HasPlans
         $subscription = $this->activeSubscription($tag);
 
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->where('starts_on', '>=', $subscription->expires_on)
             ->first();
     }
@@ -202,7 +202,7 @@ trait HasPlans
     public function lastUnpaidSubscription($tag = 'default')
     {
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->latest('starts_on')
             ->notCancelled()
             ->unpaid()
@@ -212,7 +212,7 @@ trait HasPlans
     public function lastShouldPaySubcription($tag = 'default')
     {
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->latest('starts_on')
             ->notCancelled() // cancelled = null
             ->unpaid()  // is_paid = 0
@@ -223,7 +223,7 @@ trait HasPlans
     public function lastCancelledAndUnpaidSubscription($tag = 'default')
     {
         return $this->subscriptions()
-            ->when($tag, fn($q) => $q->whereHas('plan', fn($query) => $query->where('tag', $tag)))
+            ->when($tag, fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('tag', $tag)))
             ->latest('starts_on')
             ->cancelled() // cancelled = null
             ->unpaid()  // is_paid = 0
@@ -325,8 +325,7 @@ trait HasPlans
         bool $isRecurring = true,
         bool $isPaid = false,
         CarbonInterface $startsOn = null
-    )
-    {
+    ) {
         $subscriptionModel = config('plans.models.subscription');
         $tag = $plan->tag;
 
@@ -420,8 +419,7 @@ trait HasPlans
         int $duration = 30,
         bool $startFromNow = true,
         bool $isRecurring = true
-    )
-    {
+    ) {
         $tag = $newPlan->tag;
 
         if (! $this->hasActiveSubscription($tag)) {
@@ -514,8 +512,7 @@ trait HasPlans
         bool $startFromNow = true,
         bool $isRecurring = true,
         $tag = 'default'
-    )
-    {
+    ) {
         if (! $this->hasActiveSubscription($tag)) {
             if ($this->hasSubscriptions()) {
                 $lastActiveSubscription = $this->lastActiveSubscription($tag);
@@ -578,8 +575,7 @@ trait HasPlans
         bool $startFromNow = true,
         bool $isRecurring = true,
         $tag = 'default'
-    )
-    {
+    ) {
         if (! $this->hasActiveSubscription($tag)) {
             if ($this->hasSubscriptions()) {
                 $lastActiveSubscription = $this->lastActiveSubscription($tag);
@@ -703,8 +699,7 @@ trait HasPlans
     public function renewSubscriptionFromSubscription(
         PlanSubscriptionModel $subscriptionModel,
         bool $useExpiresOnAsStartsOn = true
-    )
-    {
+    ) {
         $subscriptionModel->load(['plan']);
 
         $startsOn = $useExpiresOnAsStartsOn ?
@@ -734,7 +729,7 @@ trait HasPlans
         return $this->subscriptions()
             ->when(
                 $code,
-                fn($q) => $q->whereHas('plan', fn($query) => $query->where('code', $code)->where('tag', $tag))
+                fn ($q) => $q->whereHas('plan', fn ($query) => $query->where('code', $code)->where('tag', $tag))
             )
             ->where('starts_on', '<', Carbon::now())
             ->count() > 0;
