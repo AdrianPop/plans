@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Rennokki\Plans\Traits;
 
 use Carbon\Carbon;
@@ -74,7 +72,7 @@ trait HasPlans
 
         $this->currentSubscription($tag)
             ->get()
-            ->each(function (PlanSubscriptionModel $s) use (&$total, $feature): void {
+            ->each(function (PlanSubscriptionModel $s) use (&$total, $feature) {
                 $total += $s->getLimitOf($feature);
             });
 
