@@ -57,10 +57,23 @@ trait HasPlans
     {
         $total = 0;
 
-        $this->currentSubscription('sms')
+        $this->currentSubscription($tag)
             ->get()
-            ->each(function (PlanSubscriptionModel $s) use(&$total) {
-                $total += $s->getRemainingOf('sms');
+            ->each(function (PlanSubscriptionModel $s) use(&$total, $feature) {
+                $total += $s->getRemainingOf($feature);
+            });
+
+        return $total;
+    }
+
+    public function getLimitOfByTagAndFeature($tag, $feature): float
+    {
+        $total = 0;
+
+        $this->currentSubscription($tag)
+            ->get()
+            ->each(function (PlanSubscriptionModel $s) use(&$total, $feature) {
+                $total += $s->getLimitOf($feature);
             });
 
         return $total;
@@ -68,8 +81,6 @@ trait HasPlans
 
     public function activeSubscriptionWithRemainingFeatures($tag, $feature): ?PlanSubscriptionModel
     {
-        $total = 0;
-
         $x = $this
             ->subscriptions()
             ->whereHas('plan', fn ($query) => $query->where('tag', $tag))
@@ -79,8 +90,6 @@ trait HasPlans
             ->orderBy('id')
             ->notCancelled()
             ->get();
-
-        $chosenPlan = null;
 
         /** @var PlanSubscriptionModel $a */
         foreach ($x as $a) {
