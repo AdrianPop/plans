@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans\Models;
 
 use App\Models\Invoice;
@@ -263,7 +265,7 @@ class PlanSubscriptionModel extends Model
     public function pay()
     {
         $this->update([
-            'is_paid' => true
+            'is_paid' => true,
         ]);
 
         return $this;
@@ -272,7 +274,7 @@ class PlanSubscriptionModel extends Model
     public function updateChargingPrice($amount = 0)
     {
         $this->update([
-            'charging_price' => $amount
+            'charging_price' => $amount,
         ]);
 
         return $this;

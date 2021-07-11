@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans\Test;
 
 use Carbon\Carbon;
@@ -20,7 +22,7 @@ class RecurrencyTest extends TestCase
         $this->newPlan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
     }
 
-    public function testRecurrency()
+    public function testRecurrency(): void
     {
         $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(7));
 

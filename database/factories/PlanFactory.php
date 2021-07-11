@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
 |--------------------------------------------------------------------------
 | Model Factories
@@ -16,7 +18,7 @@ $factory->define(\Rennokki\Plans\Models\PlanModel::class, function ($faker, $att
         'tag' => $attributes['tag'] ?? 'default',
         'code' => $attributes['code'] ?? 'free',
         'description' => 'This is a testing plan.',
-        'price' => (float) mt_rand(10, 200),
+        'price' => (float) random_int(10, 200),
         'currency' => 'EUR',
         'duration' => 30,
     ];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans\Test;
 
 use Rennokki\Plans\Models\PlanFeatureModel;
@@ -17,7 +19,7 @@ class FeatureTest extends TestCase
         $this->plan = factory(\Rennokki\Plans\Models\PlanModel::class)->create();
     }
 
-    public function testConsumeFeature()
+    public function testConsumeFeature(): void
     {
         $subscription = $this->user->subscribeTo($this->plan, 30);
 
@@ -77,7 +79,7 @@ class FeatureTest extends TestCase
         $this->assertEquals($subscription->getRemainingOf('build.hours'), 0);
     }
 
-    public function testUnconsumeFeature()
+    public function testUnconsumeFeature(): void
     {
         $subscription = $this->user->subscribeTo($this->plan, 30);
 

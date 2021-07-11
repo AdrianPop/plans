@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans\Events;
 
 use Illuminate\Queue\SerializesModels;

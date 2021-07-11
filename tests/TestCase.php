@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans\Test;
 
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -31,7 +33,7 @@ abstract class TestCase extends Orchestra
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    public function getEnvironmentSetUp($app): void
     {
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite', [
@@ -47,7 +49,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('plans.models.usage', PlanSubscriptionUsageModel::class);
     }
 
-    protected function resetDatabase()
+    protected function resetDatabase(): void
     {
         file_put_contents(__DIR__.'/database.sqlite', null);
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Rennokki\Plans;
 
 use Illuminate\Support\ServiceProvider;
@@ -11,7 +13,7 @@ class PlansServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->publishes([
             __DIR__.'/../config/plans.php' => config_path('plans.php'),
@@ -28,7 +30,7 @@ class PlansServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         //
     }

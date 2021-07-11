@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,9 +13,9 @@ class Plans extends Migration
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('plans', function (Blueprint $table) {
+        Schema::create('plans', function (Blueprint $table): void {
             $table->increments('id');
 
             $table->string('name');
@@ -29,7 +31,7 @@ class Plans extends Migration
             $table->timestamps();
         });
 
-        Schema::create('plans_features', function (Blueprint $table) {
+        Schema::create('plans_features', function (Blueprint $table): void {
             $table->increments('id');
             $table->integer('plan_id');
             $table->string('name');
@@ -40,7 +42,7 @@ class Plans extends Migration
             $table->timestamps();
         });
 
-        Schema::create('plans_subscriptions', function (Blueprint $table) {
+        Schema::create('plans_subscriptions', function (Blueprint $table): void {
             $table->increments('id');
             $table->integer('plan_id');
             $table->integer('model_id');
@@ -57,7 +59,7 @@ class Plans extends Migration
             $table->timestamps();
         });
 
-        Schema::create('plans_usages', function (Blueprint $table) {
+        Schema::create('plans_usages', function (Blueprint $table): void {
             $table->increments('id');
             $table->integer('subscription_id');
             $table->string('code');
@@ -71,7 +73,7 @@ class Plans extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('plans');
         Schema::dropIfExists('plans_features');
