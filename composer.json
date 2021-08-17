@@ -29,8 +29,14 @@
         }
     ],
     "require": {
+        "php": "^8.0",
         "doctrine/dbal": "^2",
-        "laravel/framework": "~8"
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "laravel/framework": "~8",
+        "ext-json": "*",
+      "ext-soap": "*",
+      "ext-dom": "*",
+      "ext-openssl": "*"
     },
     "autoload": {
         "psr-4": {

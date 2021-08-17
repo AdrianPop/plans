@@ -339,13 +339,13 @@ trait HasPlans
 //            $this->lastDueSubscription($tag)->delete();
         }
 
-        $startsOn = $startsOn ?: Carbon::now()->subSeconds(1);
+        $startsOn = $startsOn ?: Carbon::now();
         $expiresOn = $duration === 30 ? (clone $startsOn)->addMonths(1) : (clone $startsOn)->addDays($duration);
 
         $subscription = $this->subscriptions()->save(new $subscriptionModel([
             'plan_id' => $plan->id,
             'starts_on' => $startsOn,
-            'expires_on' => $expiresOn->subSecond(),
+            'expires_on' => $expiresOn,
             'grace_until' => (clone $expiresOn)->addDays($plan->grace),
             'cancelled_on' => null,
             'payment_method' => null,

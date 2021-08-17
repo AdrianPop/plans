@@ -24,20 +24,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class PlanSubscriptionModel extends Model
 {
-    protected $table = 'plans_subscriptions';
+    protected $table = "plans_subscriptions";
     protected $guarded = [];
     protected $dates = [
-        'starts_on',
-        'expires_on',
-        'cancelled_on',
-        'grace_until',
+        "starts_on",
+        "expires_on",
+        "cancelled_on",
+        "grace_until",
     ];
     protected $casts = [
-        'is_paid' => 'boolean',
-        'is_recurring' => 'boolean',
+        "is_paid" => "boolean",
+        "is_recurring" => "boolean",
     ];
 
-    protected $with = ['plan'];
+    protected $with = ["plan"];
 
     public function model()
     {
@@ -46,107 +46,123 @@ class PlanSubscriptionModel extends Model
 
     public function plan()
     {
-        return $this->belongsTo(config('plans.models.plan'), 'plan_id');
+        return $this->belongsTo(config("plans.models.plan"), "plan_id");
     }
 
     public function invoice()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
+        return $this->belongsTo(Invoice::class, "invoice_id");
     }
 
     public function proforma()
     {
-        return $this->belongsTo(Invoice::class, 'proforma_id');
+        return $this->belongsTo(Invoice::class, "proforma_id");
     }
 
     public function features()
     {
-        return $this->plan()->first()->features();
+        return $this->plan()
+            ->first()
+            ->features();
     }
 
     public function usages()
     {
-        return $this->hasMany(config('plans.models.usage'), 'subscription_id');
+        return $this->hasMany(config("plans.models.usage"), "subscription_id");
     }
 
     public function scopePaid($query)
     {
-        return $query->where('is_paid', true);
+        return $query->where("is_paid", true);
     }
 
     public function scopeUnpaid($query)
     {
-        return $query->where('is_paid', false);
+        return $query->where("is_paid", false);
     }
 
     public function scopeNoProforma($query)
     {
-        return $query->whereNull('proforma_id');
+        return $query->whereNull("proforma_id");
     }
 
     public function scopeNoInvoice($query)
     {
-        return $query->whereNull('invoice_id');
+        return $query->whereNull("invoice_id");
     }
 
     public function scopeExpired($query)
     {
-        return $query->where('expires_on', '<', Carbon::now()->toDateTimeString());
+        return $query->where(
+            "expires_on",
+            "<",
+            Carbon::now()->toDateTimeString()
+        );
     }
 
     public function scopeExpiresIn1Hour($query)
     {
-        return $query->where('expires_on', '<', Carbon::parse('- 1 hour')->toDateTimeString());
+        return $query->where(
+            "expires_on",
+            "<",
+            Carbon::parse("- 1 hour")->toDateTimeString()
+        );
     }
 
     public function scopeRecurring($query)
     {
-        return $query->where('is_recurring', true);
+        return $query->where("is_recurring", true);
     }
 
     public function scopeCancelled($query)
     {
-        return $query->whereNotNull('cancelled_on');
+        return $query->whereNotNull("cancelled_on");
     }
 
     public function scopeNotCancelled($query)
     {
-        return $query->whereNull('cancelled_on');
+        return $query->whereNull("cancelled_on");
     }
 
     public function scopeFreePlan($query)
     {
-        return $query->whereHas('plan', fn (Builder $query) => $query->where('code', '=', PLAN_FREE));
+        return $query->whereHas(
+            "plan",
+            fn(Builder $query) => $query->where("code", "=", PLAN_FREE)
+        );
     }
 
     public function scopePremiumPlan($query)
     {
-        return $query->whereHas('plan', fn (Builder $query) => $query->where('code', '=', PLAN_PREMIUM));
+        return $query->whereHas(
+            "plan",
+            fn(Builder $query) => $query->where("code", "=", PLAN_PREMIUM)
+        );
     }
 
     public function scopeShouldBePaid($query)
     {
-        return $query->where('charging_price', '>', 0);
+        return $query->where("charging_price", ">", 0);
     }
 
     public function scopeNoChargingPrice($query)
     {
-        return $query->where('charging_price', '=', 0);
+        return $query->where("charging_price", "=", 0);
     }
 
     public function scopeInGracePeriod($query)
     {
-        return $query->where('grace_until', '>', Carbon::now());
+        return $query->where("grace_until", ">", Carbon::now());
     }
 
     public function scopeOutsideGracePeriod($query)
     {
-        return $query->where('grace_until', '<', Carbon::now());
+        return $query->where("grace_until", "<", Carbon::now());
     }
 
     public function scopeHasProforma($query)
     {
-        return $query->whereNotNull('proforma_id');
+        return $query->whereNotNull("proforma_id");
     }
 
     /**
@@ -156,7 +172,9 @@ class PlanSubscriptionModel extends Model
      */
     public function hasStarted()
     {
-        return (bool) Carbon::now()->greaterThanOrEqualTo(Carbon::parse($this->starts_on));
+        return (bool) Carbon::now()->greaterThanOrEqualTo(
+            Carbon::parse($this->starts_on)
+        );
     }
 
     /**
@@ -186,7 +204,7 @@ class PlanSubscriptionModel extends Model
      */
     public function isActive()
     {
-        return (bool) ($this->hasStarted() && ! $this->hasExpired());
+        return (bool) ($this->hasStarted() && !$this->hasExpired());
     }
 
     public function isPaid()
@@ -199,9 +217,15 @@ class PlanSubscriptionModel extends Model
         return Carbon::now()->isBetween($this->expires_on, $this->grace_until);
     }
 
+    public function isRecurring()
+    {
+        return (int) $this->is_recurring === 1;
+    }
+
     public function isOutsideGracePeriod()
     {
-        return $this->hasExpired() && $this->grace_until->lessThan(Carbon::now());
+        return $this->hasExpired() &&
+            $this->grace_until->lessThan(Carbon::now());
     }
 
     public function hasFreePlan()
@@ -225,7 +249,9 @@ class PlanSubscriptionModel extends Model
             return (int) 0;
         }
 
-        return (int) Carbon::now()->diffInDays(Carbon::parse($this->expires_on));
+        return (int) Carbon::now()->diffInDays(
+            Carbon::parse($this->expires_on)
+        );
     }
 
     /**
@@ -256,7 +282,7 @@ class PlanSubscriptionModel extends Model
     public function cancel()
     {
         $this->update([
-            'cancelled_on' => Carbon::now(),
+            "cancelled_on" => Carbon::now(),
         ]);
 
         return $this;
@@ -265,7 +291,7 @@ class PlanSubscriptionModel extends Model
     public function pay()
     {
         $this->update([
-            'is_paid' => true,
+            "is_paid" => true,
         ]);
 
         return $this;
@@ -274,7 +300,7 @@ class PlanSubscriptionModel extends Model
     public function updateChargingPrice($amount = 0)
     {
         $this->update([
-            'charging_price' => $amount,
+            "charging_price" => $amount,
         ]);
 
         return $this;
@@ -289,39 +315,57 @@ class PlanSubscriptionModel extends Model
      */
     public function consumeFeature(string $featureCode, float $amount = 1)
     {
-        $usageModel = config('plans.models.usage');
+        $usageModel = config("plans.models.usage");
 
-        $feature = $this->features()->code($featureCode)->first();
+        $feature = $this->features()
+            ->code($featureCode)
+            ->first();
 
-        if (! $feature || $feature->type != 'limit') {
+        if (!$feature || $feature->type != "limit") {
             return false;
         }
 
-        $usage = $this->usages()->code($featureCode)->first();
+        $usage = $this->usages()
+            ->code($featureCode)
+            ->first();
 
-        if (! $usage) {
-            $usage = $this->usages()->save(new $usageModel([
-                'code' => $featureCode,
-                'used' => 0,
-            ]));
+        if (!$usage) {
+            $usage = $this->usages()->save(
+                new $usageModel([
+                    "code" => $featureCode,
+                    "used" => 0,
+                ])
+            );
         }
 
-        if (! $feature->isUnlimited() && $usage->used + $amount > $feature->limit) {
+        if (
+            !$feature->isUnlimited() &&
+            $usage->used + $amount > $feature->limit
+        ) {
             return false;
         }
 
-        $remaining = (float) ($feature->isUnlimited()) ? -1 : $feature->limit - ($usage->used + $amount);
+        $remaining = (float) $feature->isUnlimited()
+            ? -1
+            : $feature->limit - ($usage->used + $amount);
 
-//        if ($remaining === (float) 0) {
-//            $this->update([
-//                'expires_on' => Carbon::now()
-//            ]);
-//        }
+        //        if ($remaining === (float) 0) {
+        //            $this->update([
+        //                'expires_on' => Carbon::now()
+        //            ]);
+        //        }
 
-        event(new \Rennokki\Plans\Events\FeatureConsumed($this, $feature, $amount, $remaining));
+        event(
+            new \Rennokki\Plans\Events\FeatureConsumed(
+                $this,
+                $feature,
+                $amount,
+                $remaining
+            )
+        );
 
         return $usage->update([
-            'used' => (float) ($usage->used + $amount),
+            "used" => (float) ($usage->used + $amount),
         ]);
     }
 
@@ -334,30 +378,51 @@ class PlanSubscriptionModel extends Model
      */
     public function unconsumeFeature(string $featureCode, float $amount = 1)
     {
-        $usageModel = config('plans.models.usage');
+        $usageModel = config("plans.models.usage");
 
-        $feature = $this->features()->code($featureCode)->first();
+        $feature = $this->features()
+            ->code($featureCode)
+            ->first();
 
-        if (! $feature || $feature->type != 'limit') {
+        if (!$feature || $feature->type != "limit") {
             return false;
         }
 
-        $usage = $this->usages()->code($featureCode)->first();
+        $usage = $this->usages()
+            ->code($featureCode)
+            ->first();
 
-        if (! $usage) {
-            $usage = $this->usages()->save(new $usageModel([
-                'code' => $featureCode,
-                'used' => 0,
-            ]));
+        if (!$usage) {
+            $usage = $this->usages()->save(
+                new $usageModel([
+                    "code" => $featureCode,
+                    "used" => 0,
+                ])
+            );
         }
 
-        $used = (float) $feature->isUnlimited() ? ($usage->used - $amount < 0 ? 0 : $usage->used - $amount) : ($usage->used - $amount);
-        $remaining = (float) $feature->isUnlimited() ? -1 : ($used > 0 ? $feature->limit - $used : $feature->limit);
+        $used = (float) $feature->isUnlimited()
+            ? ($usage->used - $amount < 0
+                ? 0
+                : $usage->used - $amount)
+            : $usage->used - $amount;
+        $remaining = (float) $feature->isUnlimited()
+            ? -1
+            : ($used > 0
+                ? $feature->limit - $used
+                : $feature->limit);
 
-        event(new \Rennokki\Plans\Events\FeatureUnconsumed($this, $feature, $amount, $remaining));
+        event(
+            new \Rennokki\Plans\Events\FeatureUnconsumed(
+                $this,
+                $feature,
+                $amount,
+                $remaining
+            )
+        );
 
         return $usage->update([
-            'used' => $used,
+            "used" => $used,
         ]);
     }
 
@@ -369,14 +434,18 @@ class PlanSubscriptionModel extends Model
      */
     public function getUsageOf(string $featureCode)
     {
-        $usage = $this->usages()->code($featureCode)->first();
-        $feature = $this->features()->code($featureCode)->first();
+        $usage = $this->usages()
+            ->code($featureCode)
+            ->first();
+        $feature = $this->features()
+            ->code($featureCode)
+            ->first();
 
-        if (! $feature || $feature->type != 'limit') {
+        if (!$feature || $feature->type != "limit") {
             return;
         }
 
-        if (! $usage) {
+        if (!$usage) {
             return 0;
         }
 
@@ -391,27 +460,35 @@ class PlanSubscriptionModel extends Model
      */
     public function getRemainingOf(string $featureCode)
     {
-        $usage = $this->usages()->code($featureCode)->first();
+        $usage = $this->usages()
+            ->code($featureCode)
+            ->first();
 
         /** @var PlanFeatureModel $feature */
-        $feature = $this->features()->code($featureCode)->first();
+        $feature = $this->features()
+            ->code($featureCode)
+            ->first();
 
-        if (! $feature || $feature->type != 'limit') {
+        if (!$feature || $feature->type != "limit") {
             return 0;
         }
 
-        if (! $usage) {
-            return (float) ($feature->isUnlimited()) ? -1 : $feature->limit;
+        if (!$usage) {
+            return (float) $feature->isUnlimited() ? -1 : $feature->limit;
         }
 
-        return (float) ($feature->isUnlimited()) ? -1 : ($feature->limit - $usage->used);
+        return (float) $feature->isUnlimited()
+            ? -1
+            : $feature->limit - $usage->used;
     }
 
     public function getLimitOf(string $featureCode)
     {
-        $feature = $this->features()->code($featureCode)->first();
+        $feature = $this->features()
+            ->code($featureCode)
+            ->first();
 
-        if (! $feature || $feature->type != 'limit') {
+        if (!$feature || $feature->type != "limit") {
             return 0;
         }
         return $feature->limit;
@@ -425,7 +502,7 @@ class PlanSubscriptionModel extends Model
     public static function byProformaId(int $proformaId): self
     {
         return self::query()
-            ->where('proforma_id', $proformaId)
+            ->where("proforma_id", $proformaId)
             ->firstOrFail();
     }
 }
