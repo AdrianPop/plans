@@ -30,13 +30,12 @@
     ],
     "require": {
         "php": "^8.0",
-        "doctrine/dbal": "^2",
-        "friendsofphp/php-cs-fixer": "^3.0",
-        "laravel/framework": "~8",
+        "ext-dom": "*",
         "ext-json": "*",
-      "ext-soap": "*",
-      "ext-dom": "*",
-      "ext-openssl": "*"
+        "ext-openssl": "*",
+        "ext-soap": "*",
+        "doctrine/dbal": "^3.0",
+        "laravel/framework": "~8"
     },
     "autoload": {
         "psr-4": {
