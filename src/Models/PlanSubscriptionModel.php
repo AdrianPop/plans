@@ -128,7 +128,7 @@ class PlanSubscriptionModel extends Model
     {
         return $query->whereHas(
             "plan",
-            fn(Builder $query) => $query->where("code", "=", PLAN_FREE)
+            fn (Builder $query) => $query->where("code", "=", PLAN_FREE)
         );
     }
 
@@ -136,7 +136,7 @@ class PlanSubscriptionModel extends Model
     {
         return $query->whereHas(
             "plan",
-            fn(Builder $query) => $query->where("code", "=", PLAN_PREMIUM)
+            fn (Builder $query) => $query->where("code", "=", PLAN_PREMIUM)
         );
     }
 
